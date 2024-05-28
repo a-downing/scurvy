@@ -58,11 +58,6 @@ namespace scurvy::impl {
         if (solver.info() == Eigen::Success) {
             auto values = solver.eigenvalues();
             return { values[0], values[1], values[2] };
-        } else {
-            printf("a: %.17g\n", a);
-            printf("b: %.17g\n", b);
-            printf("c: %.17g\n", c);
-            printf("d: %.17g\n", d);
         }
         
         //assert("Eigenvalue computation did not succeed." == nullptr);
@@ -73,7 +68,7 @@ namespace scurvy::impl {
         if(a == 0.0) {
             printf("falling back to solve_quadratic\n");
             auto rs = solve_quadratic(b, c, d);
-            return { NAN_CD, rs[0], rs[1] };
+            return { NAN_CD, rs[0]+0i, rs[1]+0i };
         }
 
         auto cs = Eigen::VectorXd(4);
@@ -91,11 +86,6 @@ namespace scurvy::impl {
         if (solver.info() == Eigen::Success) {
             auto values = solver.eigenvalues();
             return { values[0], values[1], values[2] };
-        } else {
-            printf("a: %.17g\n", a);
-            printf("b: %.17g\n", b);
-            printf("c: %.17g\n", c);
-            printf("d: %.17g\n", d);
         }
         
         //assert("Eigenvalue computation did not succeed." == nullptr);
