@@ -144,43 +144,55 @@ namespace scurvy {
 
             auto v0 = prob.v0;
 
+            auto done = 0.0;
             if(t <= T1) {
                 return v0 + 0.5*prob.J * t*t;
             }
             
             auto v1 = v0 + 0.5*prob.J * T1*T1;
 
-            if(t <= T1+T2) {
+            done += T1;
+            if(t <= done+T2) {
+                t -= done;
                 return v1 + a*t;
             }
 
             auto v2 = v1 + a*T2;
 
-            if(t <= T1+T2+T3) {
+            done += T2;
+            if(t <= done+T3) {
+                t -= done;
                 return v2 + a*t - 0.5*prob.J * t*t;
             }
 
             auto v3 = v2 + a*T3 - 0.5*prob.J * T3*T3;
 
-            if(t <= T1+T2+T3+T4) {
+            done += T3;
+            if(t <= done+T4) {
                 return v3;
             }
 
             auto v4 = v3;
 
-            if(t <= T1+T2+T3+T4+T5) {
+            done += T4;
+            if(t <= done+T5) {
+                t -= done;
                 return v4 - 0.5 * prob.J * t*t;
             }
 
             auto v5 = v4 - 0.5 * prob.J * T5*T5;
 
-            if(t <= T1+T2+T3+T4+T5+T6) {
+            done += T5;
+            if(t <= done+T6) {
+                t -= done;
                 return v5 - d*t;
             }
 
             auto v6 = v5 - d*T6;
 
-            if(t <= T1+T2+T3+T4+T5+T6+T7) {
+            done += T6;
+            if(t <= done+T7) {
+                t -= done;
                 return v6 - d*t + 0.5*prob.J * t*t;
             }
 
