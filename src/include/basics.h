@@ -138,6 +138,56 @@ namespace scurvy {
             return v7;
         }
 
+        double vt(const problem_t &prob, double t) const {
+            auto a = !impl::near_zero(T2) ? prob.A : 0.5*prob.J*acc_time();
+            auto d = !impl::near_zero(T6) ? prob.D : 0.5*prob.J*dec_time();
+
+            auto v0 = prob.v0;
+
+            if(t <= T1) {
+                return v0 + 0.5*prob.J * t*t;
+            }
+            
+            auto v1 = v0 + 0.5*prob.J * T1*T1;
+
+            if(t <= T1+T2) {
+                return v1 + a*t;
+            }
+
+            auto v2 = v1 + a*T2;
+
+            if(t <= T1+T2+T3) {
+                return v2 + a*t - 0.5*prob.J * t*t;
+            }
+
+            auto v3 = v2 + a*T3 - 0.5*prob.J * T3*T3;
+
+            if(t <= T1+T2+T3+T4) {
+                return v3;
+            }
+
+            auto v4 = v3;
+
+            if(t <= T1+T2+T3+T4+T5) {
+                return v4 - 0.5 * prob.J * t*t;
+            }
+
+            auto v5 = v4 - 0.5 * prob.J * T5*T5;
+
+            if(t <= T1+T2+T3+T4+T5+T6) {
+                return v5 - d*t;
+            }
+
+            auto v6 = v5 - d*T6;
+
+            if(t <= T1+T2+T3+T4+T5+T6+T7) {
+                return v6 - d*t + 0.5*prob.J * t*t;
+            }
+
+            auto v7 = v6 - d*T7 + 0.5*prob.J * T7*T7;
+            return v7;
+        }
+
         void print() const {
             printf("T1: %.17g\n", T1);
             printf("T2: %.17g\n", T2);
@@ -156,6 +206,10 @@ namespace scurvy {
 
         double vf() const {
             return periods.vf(prob);
+        }
+
+        double vf(double t) const {
+            return periods.vt(prob, t);
         }
 
         double vp() const {
