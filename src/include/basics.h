@@ -88,14 +88,14 @@ namespace scurvy {
         }
 
         void print() const {
-            std::println("Problem:");
-            std::println("V = {};", V);
-            std::println("A = {};", A);
-            std::println("D = {};", D);
-            std::println("J = {};", J);
-            std::println("L = {};", L);
-            std::println("v_0 = {};", v0);
-            std::println("v_f = {};", vf);
+            std::printf("Problem:");
+            std::printf("V = %.17g;", V);
+            std::printf("A = %.17g;", A);
+            std::printf("D = %.17g;", D);
+            std::printf("J = %.17g;", J);
+            std::printf("L = %.17g;", L);
+            std::printf("v_0 = %.17g;", v0);
+            std::printf("v_f = %.17g;", vf);
         }
     };
 
@@ -202,13 +202,6 @@ namespace scurvy::impl {
 
     inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const bool cv, const bool ca, const bool cd, const double v_p) {
         auto [V, A, D, J, L, v_0, v_f] = prob;
-
-        if(DEBUG) {
-            std::println("get_periods: x: {}", x);
-            std::println("get_periods: x_hat: {}", x_hat);
-            std::println("get_periods: x_bar: {}", x_bar);
-            std::println("get_periods: v_p: {}", v_p);
-        }
 
         if(x < 0 || x_hat < 0 || x_bar < 0) {
             return std::nullopt;

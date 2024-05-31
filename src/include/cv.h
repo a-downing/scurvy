@@ -7,7 +7,7 @@
 namespace scurvy::impl {
     inline std::optional<solution_t> cv_ca_cd(const problem_t &prob) {
         if(DEBUG) {
-            std::println(__func__);
+            std::printf("%s\n", __func__);
         }
 
         auto [V, A, D, J, L, v_0, v_f] = prob;
@@ -27,7 +27,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> cv_nca_cd(const problem_t &prob) {
         if(DEBUG) {
-            std::println(__func__);
+            std::printf("%s\n", __func__);
         }
 
         auto [V, A, D, J, L, v_0, v_f] = prob;
@@ -47,7 +47,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> cv_ca_ncd(const problem_t &prob) {
         if(DEBUG) {
-            std::println(__func__);
+            std::printf("%s\n", __func__);
         }
 
         auto [V, A, D, J, L, v_0, v_f] = prob;
@@ -67,7 +67,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> cv_nca_ncd(const problem_t &prob) {
         if(DEBUG) {
-            std::println(__func__);
+            std::printf("%s\n", __func__);
         }
 
         auto [V, A, D, J, L, v_0, v_f] = prob;

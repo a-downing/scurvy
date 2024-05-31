@@ -1,7 +1,5 @@
 #include <cmath>
-#include <cassert>
 #include <array>
-#include <limits>
 
 #include <Eigen/Eigen>
 #include <Eigen/Dense>
@@ -9,7 +7,7 @@
 #include <maths.h>
 
 namespace scurvy::impl {
-    using namespace  std::complex_literals;
+    using namespace std::complex_literals;
 
     std::array<double, 2> solve_quadratic(double a, double b, double c) {
         auto q = -0.5 * (b + std::copysign(std::sqrt(diff_of_products(b, b, 4.0*a, c)), b));
@@ -66,7 +64,6 @@ namespace scurvy::impl {
 
     std::array<std::complex<double>, 3> solve_cubic(double a, double b, double c, double d) {
         if(a == 0.0) {
-            printf("falling back to solve_quadratic\n");
             auto rs = solve_quadratic(b, c, d);
             return { NAN_CD, rs[0]+0i, rs[1]+0i };
         }

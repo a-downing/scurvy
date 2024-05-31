@@ -1,7 +1,6 @@
 #pragma once
 
 #include <optional>
-#include <expected>
 #include <array>
 
 #include <basics.h>
@@ -11,17 +10,17 @@
 #include <ncv_ca.h>
 
 namespace scurvy {
-    inline std::expected<solution_t, const char *> solve(const problem_t &prob) {
+    inline std::optional<solution_t> solve(const problem_t &prob) {
         auto sol = impl::ncv_nca(prob.is_acc() ? prob : prob.as_dfp());
         
         if(sol.has_value()) {
-            return *sol;
+            return sol;
         }
 
         sol = impl::ncv_ca(prob.is_acc() ? prob : prob.as_dfp());
 
         if(sol.has_value()) {
-            return *sol;
+            return sol;
         }
 
         auto p = prob;
@@ -59,6 +58,7 @@ namespace scurvy {
             return *best_sol;
         }
 
-        return std::unexpected("no solutions found");
+        std::fprintf(stderr, "no solutions found\n");
+        return std::nullopt;
     }
 }

@@ -30,7 +30,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> ncv_nca(const scurvy::problem_t &_prob) {
         if(DEBUG) {
-            std::println(__func__);
+            std::printf("%s\n", __func__);
         }
 
         // hack, there are precision issues when this case slightly overshoots v_f and the other solutions are left with only a tiny time for the deceleration phase
@@ -44,12 +44,6 @@ namespace scurvy::impl {
             auto x = xc.real();
 
             auto vp = v_0 + 0.25*J*(x*x);
-
-            if(DEBUG) {
-                std::println("x: {}", x);
-                std::println("vp: {}", vp);
-                std::println("acc: {}", J * 0.5*x);
-            }
 
             if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
                 continue;
@@ -67,15 +61,7 @@ namespace scurvy::impl {
             auto T2 = 0.0;
             auto T3 = T1;
 
-            if(DEBUG) {
-                std::println("T1: {}, T2: {}, T3: {}", T1, T2, T3);
-            }
-
             auto l = (v_0 + vp)/2 * x;
-
-            if(DEBUG) {
-                std::println("dist: {}", L);
-            }
 
             if(!is_close(l, L)) {
                 continue;
