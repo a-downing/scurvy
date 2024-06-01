@@ -24,7 +24,7 @@ namespace scurvy::impl {
         auto prob = _prob;
         prob.J *= 1.0 - 1e-2;
 
-        auto [V, A, D, J, L, v_0, v_f] = prob;
+        const auto [V, A, D, J, L, v_0, v_f] = prob;
         auto x_roots = ncv_ca_x_roots(prob);
 
         for(auto xc : x_roots) {
@@ -48,7 +48,11 @@ namespace scurvy::impl {
                 continue;
             }
 
-            auto L = (prob.v0 + vp)/2 * x;
+            auto l = (prob.v0 + vp)/2 * x;
+
+            if(DEBUG) {
+                std::fprintf(stderr, "l: %g, L: %g, err: %g\n", l, L, l - L);
+            }
 
             if(!is_close(L, prob.L)) {
                 continue;

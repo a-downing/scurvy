@@ -19,6 +19,14 @@ namespace scurvy::impl {
 
         auto z = std::pow(J, 3)*(sqrt3*std::sqrt(ra+0i)/J + 9*L/J);
 
+        if(DEBUG) {
+            std::fprintf(stderr, "a: %g\n", a);
+            std::fprintf(stderr, "b: %g\n", b);
+            std::fprintf(stderr, "c: %g\n", c);
+            std::fprintf(stderr, "ra: %g\n", ra);
+            std::fprintf(stderr, "z: %g + %gi\n", z.real(), z.imag());
+        }
+
         if(z == 0.0) {
             return { NAN_CD, NAN_CD, NAN_CD };
         }
@@ -37,19 +45,23 @@ namespace scurvy::impl {
         auto prob = _prob;
         prob.J *= 1.0 - 1e-2;
 
-        auto [V, A, D, J, L, v_0, v_f] = prob;
+        const auto [V, A, D, J, L, v0, vf] = prob;
         auto x_roots = ncv_nca_x_roots(prob);
 
         for(auto xc : x_roots) {
             auto x = xc.real();
+            auto vp = v0 + 0.25*J*(x*x);
 
-            auto vp = v_0 + 0.25*J*(x*x);
+            if(DEBUG) {
+                std::fprintf(stderr, "x: %g\n", x);
+                std::fprintf(stderr, "vp: %g\n", vp);
+            }
 
             if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
                 continue;
             }
 
-            if(vp > v_f && prob.afp() || -vp < -v_f && !prob.afp()) {
+            if(vp > vf && prob.afp() || -vp < -vf && !prob.afp()) {
                 continue;
             }
 
@@ -61,9 +73,14 @@ namespace scurvy::impl {
             auto T2 = 0.0;
             auto T3 = T1;
 
-            auto l = (v_0 + vp)/2 * x;
+            auto l = (v0 + vp)/2 * x;
 
-            if(!is_close(l, L)) {
+            if(DEBUG) {
+                std::fprintf(stderr, "T1: %g, T2: %g, T3: %g\n", T1, T2, T3);
+                std::fprintf(stderr, "l: %g, L: %g, err: %g\n", l, L, l - L);
+            }
+
+            if(!is_close(l, prob.L)) {
                 continue;
             }
 

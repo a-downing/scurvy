@@ -48,6 +48,22 @@ int main() {
             continue;
         }
 
+        // V = 1.122129086871257;
+        // A = 1.4460857149382988;
+        // D = 0.77693564375689383;
+        // J = 0.16456553031710394;
+        // L = 0.57131192971275346;
+        // v0 = 1.4093850197495483e-07;
+        // vf = 1.407989759483197e-07;
+
+        V = 1.1376728117766692;
+        A = 0.7167336063914358;
+        D = 1.1100158723009106;
+        J = 0.12610673230630257;
+        L = 3.4186337288571851;
+        v0 = 9.9254077027183252e-05;
+        vf = 9.925407702004229e-05;
+
         auto prob = scurvy::problem_t(V, A, D, J, L, v0, vf);
 
         num_problems++;
@@ -87,7 +103,7 @@ int main() {
         return 0;*/
 
         if(!scurvy::impl::is_close(sol->distance(), sol->prob.L, scurvy::impl::RELTOL_DIST, scurvy::impl::ABSTOL_DIST)) {
-            fail(sol->prob, "%: wrong distance: %g vs %g, err: %g\n", sol->type_name(), sol->distance(), sol->prob.L, sol->distance() - sol->prob.L);
+            fail(sol->prob, "%s: wrong distance: %g vs %g, err: %g\n", sol->type_name(), sol->distance(), sol->prob.L, sol->distance() - sol->prob.L);
         }
 
         if(sol->type == scurvy::solution_type_t::NCV_CA || sol->type == scurvy::solution_type_t::NCV_NCA) {

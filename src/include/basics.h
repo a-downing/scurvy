@@ -54,6 +54,8 @@ namespace scurvy {
 
         }
 
+        problem_t() = default;
+
         bool is_acc() const {
             return vf >= v0;
         }
@@ -92,14 +94,14 @@ namespace scurvy {
         }
 
         void print() const {
-            std::printf("Problem:\n");
-            std::printf("V = %.17g;\n", V);
-            std::printf("A = %.17g;\n", A);
-            std::printf("D = %.17g;\n", D);
-            std::printf("J = %.17g;\n", J);
-            std::printf("L = %.17g;\n", L);
-            std::printf("v_0 = %.17g;\n", v0);
-            std::printf("v_f = %.17g;\n", vf);
+            std::fprintf(stderr, "Problem:\n");
+            std::fprintf(stderr, "V = %.17g;\n", V);
+            std::fprintf(stderr, "A = %.17g;\n", A);
+            std::fprintf(stderr, "D = %.17g;\n", D);
+            std::fprintf(stderr, "J = %.17g;\n", J);
+            std::fprintf(stderr, "L = %.17g;\n", L);
+            std::fprintf(stderr, "v0 = %.17g;\n", v0);
+            std::fprintf(stderr, "vf = %.17g;\n", vf);
         }
     };
 
@@ -273,6 +275,10 @@ namespace scurvy::impl {
     inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const bool cv, const bool ca, const bool cd, const double v_p) {
         auto [V, A, D, J, L, v_0, v_f] = prob;
 
+        if(DEBUG) {
+            std::fprintf(stderr, "x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
+        }
+
         if(x < 0 || x_hat < 0 || x_bar < 0) {
             return std::nullopt;
         }
@@ -303,6 +309,10 @@ namespace scurvy::impl {
 
         if(cd && periods.T6 < -ABSTOL || !cd && !near_zero(periods.T6)) {
             return std::nullopt;
+        }
+
+        if(DEBUG) {
+            std::fprintf(stderr, "l: %g, L: %g, err: %g\n", periods.distance(prob, v_p), L, periods.distance(prob, v_p) - L);
         }
 
         if(!is_close(periods.distance(prob, v_p), L, RELTOL_DIST, ABSTOL_DIST)) {

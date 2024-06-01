@@ -10,23 +10,36 @@
 #include <ncv_ca.h>
 
 namespace scurvy {
-    inline std::optional<solution_t> solve(const problem_t &prob) {
-        auto sol = impl::ncv_nca(prob.is_acc() ? prob : prob.as_dfp());
+    inline std::optional<solution_t> solve(const problem_t &_prob) {
+        auto p = _prob;
+
+        // v0 and vf being very close but not equal seems to lead to precision issues
+        if(impl::is_close(p.v0, p.vf)) {
+            p.vf = p.v0;
+        }
+
+        if(impl::near_zero(p.v0)) {
+            p.v0 = 0.0;
+        }
+
+        if(impl::near_zero(p.vf)) {
+            p.vf = 0.0;
+        }
+
+        auto sol = impl::ncv_nca(p.is_acc() ? p : p.as_dfp());
         
         if(sol.has_value()) {
             return sol;
         }
 
-        sol = impl::ncv_ca(prob.is_acc() ? prob : prob.as_dfp());
+        sol = impl::ncv_ca(p.is_acc() ? p : p.as_dfp());
 
         if(sol.has_value()) {
             return sol;
         }
 
-        auto p = prob;
-
-        if(prob.dfp_optimal()) {
-            p = prob.as_dfp();
+        if(p.dfp_optimal()) {
+            p = p.as_dfp();
         }
 
         std::array sols = {
@@ -63,7 +76,7 @@ namespace scurvy {
     }
 
     inline std::optional<std::vector<solution_t>> solve_path(std::vector<problem_t> &probs) {
-        std::vector<solution_t> solutions;
+        std::vector<solution_t> solutions(probs.size());
 
         for(int i = 0; i < probs.size(); i++) {
             auto prob = probs[i];
@@ -71,19 +84,36 @@ namespace scurvy {
 
             std::fprintf(stderr, "solve_path: %d, v0: %g, vf: %g\n", i, prob.v0, prob.vf);
 
+            if(impl::near_zero(prob.v0)) {
+                prob.v0 = 0.0;
+            }
+
+            if(impl::near_zero(prob.vf)) {
+                prob.vf = 0.0;
+            }
+
             if(next) {
                 prob.vf = std::min(prob.V, (*next)->v0) * 0.99; // temporary hack
+
+                if(impl::near_zero((*next)->v0)) {
+                    (*next)->v0 = 0.0;
+                }
+
+                if(impl::near_zero((*next)->vf)) {
+                    (*next)->vf = 0.0;
+                }
             }
 
             auto sol = solve(prob);
 
             if(!sol.has_value()) {
                 std::fprintf(stderr, "solve_path: solve() failed\n");
+                prob.print();
                 return std::nullopt;
             }
 
             if(next) {
-                if(std::abs(sol->vf()) > (*next)->v0) {
+                if(std::abs(sol->vf()) > (*next)->v0 + impl::ABSTOL) {
                     std::fprintf(stderr, "solve_path: overshot, %g -> %g\n", std::abs(sol->vf()), (*next)->v0);
 
                     sol = solve(prob.inverse());
@@ -91,15 +121,14 @@ namespace scurvy {
                     if(sol) {
                         prob.v0 = sol->vf();
                         // temporary hack
-                        i = -1;
-                        solutions.clear();
+                        i -= 2;
                         continue;
                     }
 
                     return std::nullopt;
                 }
 
-                if(std::abs(sol->vf()) < (*next)->v0) {
+                if(std::abs(sol->vf()) < (*next)->v0 - impl::ABSTOL) {
                     std::fprintf(stderr, "solve_path: undershot: %g -> %g (%g) \n", (*next)->v0, std::abs(sol->vf()), sol->prob.vf);
                     (*next)->v0 = std::abs(sol->vf());
                 }
@@ -113,14 +142,13 @@ namespace scurvy {
                     if(sol) {
                         prob.v0 = sol->vf();
                         // temporary hack
-                        i = -1;
-                        solutions.clear();
+                        i -= 2;
                         continue;
                     }
                 }
             }
 
-            solutions.push_back(*sol);
+            solutions[i] = *sol;
         }
 
         return solutions;

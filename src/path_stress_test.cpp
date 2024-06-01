@@ -16,11 +16,11 @@ void fail(const char *format, ...) {
 }
 
 int main() {
-    constexpr int SEGS = 10;
+    constexpr int SEGS = 50;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
-    std::uniform_real_distribution<> dis2(0.001, 1.0);
+    std::uniform_real_distribution<> dis2(0.001, 10.0);
     std::vector<scurvy::problem_t> path;
 
     for(int i = 0; i < SEGS; i++) {
