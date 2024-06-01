@@ -61,4 +61,68 @@ namespace scurvy {
         std::fprintf(stderr, "no solutions found\n");
         return std::nullopt;
     }
+
+    inline std::optional<std::vector<solution_t>> solve_path(std::vector<problem_t> &probs) {
+        std::vector<solution_t> solutions;
+
+        for(int i = 0; i < probs.size(); i++) {
+            auto prob = probs[i];
+            auto next = i < probs.size() - 1 ? std::optional(&probs[i + 1]) : std::nullopt;
+
+            std::fprintf(stderr, "solve_path: %d, v0: %g, vf: %g\n", i, prob.v0, prob.vf);
+
+            if(next) {
+                prob.vf = std::min(prob.V, (*next)->v0) * 0.99; // temporary hack
+            }
+
+            auto sol = solve(prob);
+
+            if(!sol.has_value()) {
+                std::fprintf(stderr, "solve_path: solve() failed\n");
+                return std::nullopt;
+            }
+
+            if(next) {
+                if(std::abs(sol->vf()) > (*next)->v0) {
+                    std::fprintf(stderr, "solve_path: overshot, %g -> %g\n", std::abs(sol->vf()), (*next)->v0);
+
+                    sol = solve(prob.inverse());
+
+                    if(sol) {
+                        prob.v0 = sol->vf();
+                        // temporary hack
+                        i = -1;
+                        solutions.clear();
+                        continue;
+                    }
+
+                    return std::nullopt;
+                }
+
+                if(std::abs(sol->vf()) < (*next)->v0) {
+                    std::fprintf(stderr, "solve_path: undershot: %g -> %g (%g) \n", (*next)->v0, std::abs(sol->vf()), sol->prob.vf);
+                    (*next)->v0 = std::abs(sol->vf());
+                }
+            } else {
+                // TODO: do tolerance stuff the right way
+                if(std::abs(sol->vf()) > prob.vf + impl::ABSTOL) {
+                    std::fprintf(stderr, "solve_path: end overshot, %g -> %g\n", std::abs(sol->vf()), (*next)->vf);
+
+                    sol = solve(prob.inverse());
+
+                    if(sol) {
+                        prob.v0 = sol->vf();
+                        // temporary hack
+                        i = -1;
+                        solutions.clear();
+                        continue;
+                    }
+                }
+            }
+
+            solutions.push_back(*sol);
+        }
+
+        return solutions;
+    }
 }

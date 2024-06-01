@@ -20,6 +20,20 @@ add_executable(stress_test
         src/include/ncv_ca.h
         src/include/ncv_nca.h
         src/include/scurvy.h
-        src/include/solve.h)
-
+        src/include/solve.h
+)
 target_include_directories(stress_test PUBLIC src/include "${EIGEN3_INCLUDE_DIRS}")
+
+add_executable(path_stress_test
+        src/path_stress_test.cpp
+        src/solve.cpp
+        src/include/basics.h
+        src/include/cv.h
+        src/include/maths.h
+        src/include/ncv.h
+        src/include/ncv_ca.h
+        src/include/ncv_nca.h
+        src/include/scurvy.h
+        src/include/solve.h
+)
+target_include_directories(path_stress_test PUBLIC src/include "${EIGEN3_INCLUDE_DIRS}")

@@ -62,6 +62,10 @@ namespace scurvy {
             return { V, D, A, J, -L, -v0, -vf }; // A and D swapped too
         }
 
+        problem_t inverse() const {
+            return { V, D, A, J, L, vf, v0 };
+        }
+
         bool afp() const {
             return L >= 0;
         }
@@ -88,14 +92,14 @@ namespace scurvy {
         }
 
         void print() const {
-            std::printf("Problem:");
-            std::printf("V = %.17g;", V);
-            std::printf("A = %.17g;", A);
-            std::printf("D = %.17g;", D);
-            std::printf("J = %.17g;", J);
-            std::printf("L = %.17g;", L);
-            std::printf("v_0 = %.17g;", v0);
-            std::printf("v_f = %.17g;", vf);
+            std::printf("Problem:\n");
+            std::printf("V = %.17g;\n", V);
+            std::printf("A = %.17g;\n", A);
+            std::printf("D = %.17g;\n", D);
+            std::printf("J = %.17g;\n", J);
+            std::printf("L = %.17g;\n", L);
+            std::printf("v_0 = %.17g;\n", v0);
+            std::printf("v_f = %.17g;\n", vf);
         }
     };
 
@@ -220,7 +224,7 @@ namespace scurvy {
             return periods.vf(prob);
         }
 
-        double vf(double t) const {
+        double vt(double t) const {
             return periods.vt(prob, t);
         }
 

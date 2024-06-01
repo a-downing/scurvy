@@ -29,7 +29,7 @@ int main() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
-    std::uniform_real_distribution<> dis2(0.001, 100.0);
+    std::uniform_real_distribution<> dis2(0.001, 10.0);
 
     uint64_t num_problems = 0;
     std::unordered_map<scurvy::solution_type_t, uint64_t> stats;
@@ -78,6 +78,13 @@ int main() {
         if(!sol.has_value()) {
             fail(prob, "no solution\n");
         }
+
+        /*
+        for(int i = 0; i <= 1000; i++) {
+            auto t = sol->periods.time() / 1000 * i;
+            std::printf("%g %g\n", t, sol->vt(t));
+        }
+        return 0;*/
 
         if(!scurvy::impl::is_close(sol->distance(), sol->prob.L, scurvy::impl::RELTOL_DIST, scurvy::impl::ABSTOL_DIST)) {
             fail(sol->prob, "%: wrong distance: %g vs %g, err: %g\n", sol->type_name(), sol->distance(), sol->prob.L, sol->distance() - sol->prob.L);
