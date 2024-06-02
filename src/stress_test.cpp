@@ -10,12 +10,6 @@
 
 #include <scurvy.h>
 
-void display(const scurvy::solution_t &sol) {
-    char str[1024];
-    std::snprintf(str, sizeof(str), "python ../simulate.py %g %g %g %g %g %g %g %g %g", sol.periods.T1, sol.periods.T2, sol.periods.T3, sol.periods.T4, sol.periods.T5, sol.periods.T6, sol.periods.T7, sol.prob.J, sol.prob.v0);
-    system(str);
-}
-
 void fail(const scurvy::problem_t &prob, const char *format, ...) {
     prob.print();
     std::va_list args;
@@ -23,6 +17,21 @@ void fail(const scurvy::problem_t &prob, const char *format, ...) {
     std::vprintf(format, args);
     va_end (args);
     std::exit(1);
+}
+
+void simulate(const scurvy::solution_t &sol) {
+    char str[1024];
+    std::snprintf(str, sizeof(str), "python ../simulate.py %g %g %g %g %g %g %g %g %g", sol.periods.T1, sol.periods.T2, sol.periods.T3, sol.periods.T4, sol.periods.T5, sol.periods.T6, sol.periods.T7, sol.prob.J, sol.prob.v0);
+    system(str);
+}
+
+void print_scurve(const scurvy::solution_t &sol, int res = 1000) {
+    for(int i = 0; i <= res; i++) {
+        auto t = sol.periods.time() / res * i;
+        std::printf("%g %g\n", t, std::abs(sol.vt(t)));
+    }
+
+    std::printf("\n");
 }
 
 int main() {
@@ -48,27 +57,11 @@ int main() {
             continue;
         }
 
-        // V = 1.122129086871257;
-        // A = 1.4460857149382988;
-        // D = 0.77693564375689383;
-        // J = 0.16456553031710394;
-        // L = 0.57131192971275346;
-        // v0 = 1.4093850197495483e-07;
-        // vf = 1.407989759483197e-07;
-
-        V = 1.1376728117766692;
-        A = 0.7167336063914358;
-        D = 1.1100158723009106;
-        J = 0.12610673230630257;
-        L = 3.4186337288571851;
-        v0 = 9.9254077027183252e-05;
-        vf = 9.925407702004229e-05;
-
         auto prob = scurvy::problem_t(V, A, D, J, L, v0, vf);
 
         num_problems++;
 
-        auto sol = scurvy::solve(prob);
+        auto sol = scurvy::solve(prob.inverse());
 
         /*
         scurvy::solution_t sol contains a potentially modified version of

@@ -47,9 +47,9 @@ def simulate(periods, v_0, J, plot):
         t += dt
 
         xs.append(t)
-        y1s.append(v * 60)
+        y1s.append(v)
         y2s.append(d)
-        y3s.append(a * 60)
+        y3s.append(a)
 
     d = y2s[-1]
     v = y1s[-1]
@@ -65,4 +65,5 @@ def simulate(periods, v_0, J, plot):
 periods = tuple(map(lambda x: float(x), sys.argv[1:8]))
 J = float(sys.argv[8])
 v_0 = float(sys.argv[9])
+
 simulate(periods, v_0, J, True)

@@ -8,10 +8,10 @@
 namespace scurvy::impl {
     using namespace std::complex_literals;
 
-    constexpr double RELTOL = 1e-6;
-    constexpr double ABSTOL = 1e-6;
-    constexpr double RELTOL_DIST = 1e-5;
-    constexpr double ABSTOL_DIST = 1e-5;
+    constexpr double RELTOL = 1e-9;
+    constexpr double ABSTOL = 1e-9;
+    constexpr double RELTOL_DIST = 1e-6;
+    constexpr double ABSTOL_DIST = 1e-6;
     constexpr auto NAN_D = std::numeric_limits<double>::quiet_NaN();
     constexpr auto NAN_CD = std::numeric_limits<std::complex<double>>::quiet_NaN();
 

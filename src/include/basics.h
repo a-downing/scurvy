@@ -68,6 +68,17 @@ namespace scurvy {
             return { V, D, A, J, L, vf, v0 };
         }
 
+        problem_t regularized() const {
+            auto _v0 = impl::near_zero(v0) ? 0.0 : v0;
+            auto _vf = impl::near_zero(vf) ? 0.0 : vf;
+
+            if(impl::is_close(_v0, _vf)) {
+                _vf = _v0;
+            }
+
+            return { V, A, D, J, L, _v0, _vf };
+        }
+
         bool afp() const {
             return L >= 0;
         }
@@ -207,13 +218,13 @@ namespace scurvy {
         }
 
         void print() const {
-            printf("T1: %.17g\n", T1);
-            printf("T2: %.17g\n", T2);
-            printf("T3: %.17g\n", T3);
-            printf("T4: %.17g\n", T4);
-            printf("T5: %.17g\n", T5);
-            printf("T6: %.17g\n", T6);
-            printf("T7: %.17g\n", T7);
+            std::fprintf(stderr, "T1: %.17g\n", T1);
+            std::fprintf(stderr, "T2: %.17g\n", T2);
+            std::fprintf(stderr, "T3: %.17g\n", T3);
+            std::fprintf(stderr, "T4: %.17g\n", T4);
+            std::fprintf(stderr, "T5: %.17g\n", T5);
+            std::fprintf(stderr, "T6: %.17g\n", T6);
+            std::fprintf(stderr, "T7: %.17g\n", T7);
         }
     };
 

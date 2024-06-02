@@ -16,7 +16,7 @@ void fail(const char *format, ...) {
 }
 
 int main() {
-    constexpr int SEGS = 50;
+    constexpr int SEGS = 100;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
@@ -30,8 +30,14 @@ int main() {
         auto J = dis1(gen);
         auto L = dis2(gen);
 
-        // v0 and vf initially set to V, solve_path will figure out what they need to be
-        auto prob = scurvy::problem_t(V, A, D, J, L, V*0.99, V*0.99);
+        V = 100.0/60;
+        A = 40.0/60;
+        J = 20.0/60;
+        L = 1.0;
+        D = A;
+
+        // v0 and vf of interior segments will be solved by scurvy::solve_path
+        auto prob = scurvy::problem_t(V, A, D, J, L, 0.0, 0.0);
         path.push_back(prob);
     }
 
@@ -48,7 +54,7 @@ int main() {
     auto t_start = 0.0;
 
     for(auto sol : *sols) {
-        constexpr int spaces = 1000;
+        constexpr int spaces = 10000;
 
         for(int i = 0; i <= spaces; i++) {
             auto t = sol.periods.time() / spaces * i;

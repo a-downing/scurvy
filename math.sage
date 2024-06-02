@@ -9,7 +9,10 @@ R = RealField(1000)
 #v0 = R(-0.0034879858661581052)/R(60);
 
 # No constant velocity, no constant acceleration
-sol = solve([L == R(0.5)*(v0 + vp) * x, vp == v0 + R(0.25)*J*x^2], vp, x)
+sol = solve([
+    L == R(0.5)*(v0 + vp) * x,
+    vp == v0 + R(0.25)*J*x^2
+], vp, x)
 
 #print(sol)
 
