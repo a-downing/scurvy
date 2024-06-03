@@ -20,11 +20,11 @@ namespace scurvy::impl {
         auto z = std::pow(J, 3)*(sqrt3*std::sqrt(ra+0i)/J + 9*L/J);
 
         if(DEBUG) {
-            std::fprintf(stderr, "a: %g\n", a);
-            std::fprintf(stderr, "b: %g\n", b);
-            std::fprintf(stderr, "c: %g\n", c);
-            std::fprintf(stderr, "ra: %g\n", ra);
-            std::fprintf(stderr, "z: %g + %gi\n", z.real(), z.imag());
+            std::fprintf(stderr, "    a: %g\n", a);
+            std::fprintf(stderr, "    b: %g\n", b);
+            std::fprintf(stderr, "    c: %g\n", c);
+            std::fprintf(stderr, "    ra: %g\n", ra);
+            std::fprintf(stderr, "    z: %g + %gi\n", z.real(), z.imag());
         }
 
         if(z == 0.0) {
@@ -38,7 +38,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> ncv_nca(const scurvy::problem_t &_prob) {
         if(DEBUG) {
-            std::printf("%s\n", __func__);
+            std::fprintf(stderr, "%s\n", __func__);
         }
 
         // hack, there are precision issues when this case slightly overshoots v_f and the other solutions are left with only a tiny time for the deceleration phase
@@ -51,10 +51,13 @@ namespace scurvy::impl {
         for(auto xc : x_roots) {
             auto x = xc.real();
             auto vp = v0 + 0.25*J*(x*x);
+            auto dist = (v0 + vp)/2 * x;
 
             if(DEBUG) {
-                std::fprintf(stderr, "x: %g\n", x);
-                std::fprintf(stderr, "vp: %g\n", vp);
+                std::fprintf(stderr, "    x: %g + %gi\n", xc.real(), xc.imag());
+                std::fprintf(stderr, "    vp: %g\n", vp);
+                std::fprintf(stderr, "    J * 0.5*x: %g\n", J * 0.5*x);
+                std::fprintf(stderr, "    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
             }
 
             if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
@@ -73,14 +76,11 @@ namespace scurvy::impl {
             auto T2 = 0.0;
             auto T3 = T1;
 
-            auto l = (v0 + vp)/2 * x;
-
             if(DEBUG) {
-                std::fprintf(stderr, "T1: %g, T2: %g, T3: %g\n", T1, T2, T3);
-                std::fprintf(stderr, "l: %g, L: %g, err: %g\n", l, L, l - L);
+                std::fprintf(stderr, "    T1: %g, T2: %g, T3: %g\n", T1, T2, T3);
             }
 
-            if(!is_close(l, prob.L)) {
+            if(!is_close(dist, prob.L)) {
                 continue;
             }
 

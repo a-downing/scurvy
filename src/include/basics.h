@@ -64,10 +64,6 @@ namespace scurvy {
             return { V, D, A, J, -L, -v0, -vf }; // A and D swapped too
         }
 
-        problem_t inverse() const {
-            return { V, D, A, J, L, vf, v0 };
-        }
-
         problem_t regularized() const {
             auto _v0 = impl::near_zero(v0) ? 0.0 : v0;
             auto _vf = impl::near_zero(vf) ? 0.0 : vf;
@@ -283,22 +279,30 @@ namespace scurvy::impl {
         };
     }
 
-    inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const bool cv, const bool ca, const bool cd, const double v_p) {
+    inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const bool cv, const bool ca, const bool cd, const double vp) {
         auto [V, A, D, J, L, v_0, v_f] = prob;
 
+        auto dist = 0.5*(prob.v0 + vp)*x + 0.5*(vp + prob.vf)*x_bar + vp*x_hat;
+
         if(DEBUG) {
-            std::fprintf(stderr, "x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
+            std::fprintf(stderr, "    x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
+            std::fprintf(stderr, "    vp: %g\n", vp);
+            std::fprintf(stderr, "    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
+        }
+
+        if(!is_close(dist, L, RELTOL_DIST, ABSTOL_DIST)) {
+            return std::nullopt;
         }
 
         if(x < 0 || x_hat < 0 || x_bar < 0) {
             return std::nullopt;
         }
 
-        if(v_p > V && L >= 0 || -v_p > V && L < 0) {
+        if(vp > V && L >= 0 || -vp > V && L < 0) {
             return std::nullopt;
         }
 
-        if(v_p < 0 && L >= 0 || -v_p < 0 && L < 0) {
+        if(vp < 0 && L >= 0 || -vp < 0 && L < 0) {
             return std::nullopt;
         }
 
@@ -319,14 +323,6 @@ namespace scurvy::impl {
         }
 
         if(cd && periods.T6 < -ABSTOL || !cd && !near_zero(periods.T6)) {
-            return std::nullopt;
-        }
-
-        if(DEBUG) {
-            std::fprintf(stderr, "l: %g, L: %g, err: %g\n", periods.distance(prob, v_p), L, periods.distance(prob, v_p) - L);
-        }
-
-        if(!is_close(periods.distance(prob, v_p), L, RELTOL_DIST, ABSTOL_DIST)) {
             return std::nullopt;
         }
 

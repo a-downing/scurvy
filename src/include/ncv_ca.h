@@ -17,7 +17,7 @@ namespace scurvy::impl {
 
     inline std::optional<solution_t> ncv_ca(const scurvy::problem_t &_prob) {
         if(DEBUG) {
-            std::printf("%s\n", __func__);
+            std::fprintf(stderr, "%s\n", __func__);
         }
 
         // hack, there are precision issues when this case slightly overshoots v_f and the other solutions are left with only a tiny time for the deceleration phase
@@ -29,8 +29,15 @@ namespace scurvy::impl {
 
         for(auto xc : x_roots) {
             auto x = xc.real();
-
             auto vp = v_0 - A*A/J + A*x;
+            auto dist = (prob.v0 + vp)/2 * x;
+
+            if(DEBUG) {
+                std::fprintf(stderr, "    x: %g + %gi\n", xc.real(), xc.imag());
+                std::fprintf(stderr, "    vp: %g\n", vp);
+                std::fprintf(stderr, "    J * 0.5*x: %g\n", J * 0.5*x);
+                std::fprintf(stderr, "    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
+            }
 
             if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
                 continue;
@@ -48,13 +55,7 @@ namespace scurvy::impl {
                 continue;
             }
 
-            auto l = (prob.v0 + vp)/2 * x;
-
-            if(DEBUG) {
-                std::fprintf(stderr, "l: %g, L: %g, err: %g\n", l, L, l - L);
-            }
-
-            if(!is_close(L, prob.L)) {
+            if(!is_close(dist, L)) {
                 continue;
             }
 

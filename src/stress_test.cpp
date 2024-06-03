@@ -14,7 +14,7 @@ void fail(const scurvy::problem_t &prob, const char *format, ...) {
     prob.print();
     std::va_list args;
     va_start (args, format);
-    std::vprintf(format, args);
+    std::vfprintf(stderr, format, args);
     va_end (args);
     std::exit(1);
 }
@@ -61,7 +61,7 @@ int main() {
 
         num_problems++;
 
-        auto sol = scurvy::solve(prob.inverse());
+        auto sol = scurvy::solve(prob);
 
         /*
         scurvy::solution_t sol contains a potentially modified version of

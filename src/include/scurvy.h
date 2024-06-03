@@ -67,12 +67,14 @@ namespace scurvy {
         int iterations = 0;
 
         for(auto &prob : probs) {
-            if(&prob == &probs.front() || &prob == &probs.back()) {
-                continue;
+            if(&prob == &probs.front()) {
+                prob.vf = prob.V;
+            } else if(&prob == &probs.back()) {
+                prob.v0 = prob.V;
+            } else {
+                prob.v0 = prob.V;
+                prob.vf = prob.V;
             }
-
-            prob.v0 = prob.V; // * 0.99;
-            prob.vf = prob.V; // * 0.99;
         }
 
         for(int i = 0; i < probs.size(); i++) {
@@ -82,11 +84,9 @@ namespace scurvy {
 
             prob = prob.regularized();
 
-            //std::fprintf(stderr, "solve_path: %d, v0: %g, vf: %g\n", i, prob.v0, prob.vf);
-
             if(next) {
                 *next = next->regularized();
-                prob.vf = std::min(next->v0, prob.V); // * 0.99);
+                prob.vf = std::min(next->v0, prob.V);
             }
 
             auto sol = solve(prob);
@@ -101,30 +101,26 @@ namespace scurvy {
                 if(std::abs(sol->vf()) > next->v0 && !impl::is_close(std::abs(sol->vf()), next->v0)) {
                     auto err = std::abs(sol->vf()) - next->v0;
 
-                    // std::fprintf(stderr, "solve_path: i: %d, overshot\n", i);
-                    // std::fprintf(stderr, "    overshot: err: %g\n", err);
-                    // std::fprintf(stderr, "    overshot: prob.vf(): %g\n", sol->vf());
-                    // std::fprintf(stderr, "    overshot: prob.v0: %g, prob.vf: %g\n", prob.v0, prob.vf);
-                    // std::fprintf(stderr, "    overshot: next->v0: %g, next->vf: %g\n", next->v0, next->vf);
+                    std::fprintf(stderr, "solve_path: overshoot: i: %d, sol->vf(): %.17g -> next->v0: %.17g\n", i, sol->vf(), next->v0);
 
-                    // not optimal
-                    prob.v0 = std::max(0.0, prob.v0 - err);
+                    // not efficient
+                    prob.v0 *= 0.99;
                     i = i - backtrack - 1;
                     continue;
                 }
 
                 if(std::abs(sol->vf()) < next->v0 && !impl::is_close(std::abs(sol->vf()), next->v0)) {
-                    //std::fprintf(stderr, "solve_path: undershot: i: %d, %g -> %g (%g) \n", i, next->v0, std::abs(sol->vf()), sol->prob.vf);
+                    std::fprintf(stderr, "solve_path: undershoot: i: %d, sol->vf(): %g -> next->v0: %g\n", i, sol->vf(), next->v0);
                     next->v0 = std::abs(sol->vf());
                 }
             } else {
                 if(std::abs(sol->vf()) > prob.vf && !impl::is_close(std::abs(sol->vf()), prob.vf)) {
                     auto err = std::abs(sol->vf()) - prob.vf;
 
-                    //std::fprintf(stderr, "solve_path: end overshot: i: %d, %g -> %g\n", i, std::abs(sol->vf()), prob.vf);
+                    std::fprintf(stderr, "solve_path: end overshoot: i: %d, %g -> %g\n", i, std::abs(sol->vf()), prob.vf);
 
-                    // not optimal
-                    prob.v0 = std::max(0.0, prob.v0 - err);
+                    // not efficient
+                    prob.v0 *= 0.99;
                     i = i - backtrack - 1;
                     continue;
                 }
