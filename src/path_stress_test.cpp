@@ -4,6 +4,7 @@
 #include <cstdarg>
 #include <random>
 #include <string>
+#include <chrono>
 
 #include <scurvy.h>
 
@@ -16,53 +17,65 @@ void fail(const char *format, ...) {
 }
 
 int main() {
-    constexpr int SEGS = 100;
+    constexpr int SEGS = 1000;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
     std::uniform_real_distribution<> dis2(0.001, 10.0);
     std::vector<scurvy::problem_t> path;
 
-    for(int i = 0; i < SEGS; i++) {
-        auto V = dis1(gen);
-        auto A = dis1(gen);
-        auto D = dis1(gen);
-        auto J = dis1(gen);
-        auto L = dis2(gen);
+    for(;;) {
+        path.clear();
+        
+        for(int i = 0; i < SEGS; i++) {
+            auto V = dis1(gen);
+            auto A = dis1(gen);
+            auto D = dis1(gen);
+            auto J = dis1(gen);
+            auto L = dis2(gen);
 
-        V = 100.0/60;
-        A = 40.0/60;
-        J = 20.0/60;
-        L = 1.0;
-        D = A;
+            // V = 100.0/60;
+            // A = 40.0/60;
+            // D = 40.0/60;
+            // J = 20.0/60;
+            // L = 1.0;
 
-        // v0 and vf of interior segments will be solved by scurvy::solve_path
-        auto prob = scurvy::problem_t(V, A, D, J, L, 0.0, 0.0);
-        path.push_back(prob);
-    }
-
-    // the first v0 and last vf are respected
-    path.front().v0 = 0.0;
-    path.back().vf = 0.0;
-
-    auto sols = scurvy::solve_path(path);
-
-    if(!sols) {
-        fail("no solutions\n");
-    }
-
-    auto t_start = 0.0;
-
-    for(auto sol : *sols) {
-        constexpr int spaces = 10000;
-
-        for(int i = 0; i <= spaces; i++) {
-            auto t = sol.periods.time() / spaces * i;
-            std::printf("%g %g\n", t_start + t, std::abs(sol.vt(t)));
+            // v0 and vf of interior segments will be solved by scurvy::solve_path
+            auto prob = scurvy::problem_t(V, A, D, J, L, 0.0, 0.0);
+            path.push_back(prob);
         }
 
-        std::printf("\n");
-        t_start += sol.periods.time();
+        // the first v0 and last vf are respected
+        path.front().v0 = 0.0;
+        path.back().vf = 0.0;
+
+        auto start = std::chrono::high_resolution_clock::now();
+        auto sols = scurvy::solve_path(path);
+        std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
+
+        std::fprintf(stderr, "solved %zu problems in %gs\n", path.size(), duration.count());
+
+        if(!sols) {
+            fail("no solutions\n");
+        }
+
+        continue;
+
+        auto t_start = 0.0;
+
+        for(auto sol : *sols) {
+            constexpr int spaces = 10000;
+
+            for(int i = 0; i <= spaces; i++) {
+                auto t = sol.periods.time() / spaces * i;
+                std::printf("%g %g\n", t_start + t, std::abs(sol.vt(t)));
+            }
+
+            std::printf("\n");
+            t_start += sol.periods.time();
+        }
+
+        //return 0;
     }
 
     return 0;

@@ -33,7 +33,6 @@ namespace scurvy::impl {
         for(auto x : roots) {
             auto v_p = v_0 - (A*A)/J + A*x;
             auto x_bar = ((D*D) - v_f*J + J*v_p) / (D*J);
-            //auto x_bar = -((v_0 + v_p)*x - 2*L)/(v_f + v_p);
             auto periods = get_periods(prob, x, 0, x_bar, false, true, true, v_p);
             update_best(periods, best_sol, best_time, { prob, *periods, solution_type_t::NCV_CA_CD });
         }
@@ -65,7 +64,6 @@ namespace scurvy::impl {
 
             auto v_p = v_0 + 0.25*J*x*x;
             auto x_bar = (D*D - v_f*J + J*v_p) / (D*J);
-            //auto x_bar = -((v_0 + v_p)*x - 2*L)/(v_f + v_p);
             auto periods = get_periods(prob, x, 0, x_bar, false, false, true, v_p);
             update_best(periods, best_sol, best_time, { prob, *periods, solution_type_t::NCV_NCA_CD });
         }
@@ -97,7 +95,6 @@ namespace scurvy::impl {
 
             auto v_p = v_f + 0.25*J*x_bar*x_bar;
             auto x = (A*A + J*v_p - J*v_0) / (A*J);
-            //auto x = -((v_f + v_p)*x_bar - 2*L)/(v_0 + v_p);
             auto periods = get_periods(prob, x, 0, x_bar, false, true, false, v_p);
             update_best(periods, best_sol, best_time, { prob, *periods, solution_type_t::NCV_CA_NCD });
         }
@@ -128,10 +125,7 @@ namespace scurvy::impl {
             }
 
             auto v_p = v_0 + 0.25*J*(x*x);
-
             auto x_bar = (2 * std::sqrt(v_p - v_f)) / std::sqrt(J);
-            //auto x_bar = -((v_0 + v_p)*x - 2*L)/(v_f + v_p);
-
             auto periods = get_periods(prob, x, 0, x_bar, false, false, false, v_p);
             update_best(periods, best_sol, best_time, { prob, *periods, solution_type_t::NCV_NCA_NCD });
         }

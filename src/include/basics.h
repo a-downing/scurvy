@@ -40,6 +40,28 @@ namespace scurvy {
             default: return "Unknown solution_type_t";
         }
     }
+
+    inline void log(solution_type_t type, const char *format, ...) {
+        if(!DEBUG) {
+            return;
+        }
+
+        std::va_list args;
+        va_start (args, format);
+        std::vfprintf(stderr, format, args);
+        va_end (args);
+    }
+
+    inline void log(const char *format, ...) {
+        if(!DEBUG) {
+            return;
+        }
+
+        std::va_list args;
+        va_start (args, format);
+        std::vfprintf(stderr, format, args);
+        va_end (args);
+    }
     
     struct problem_t {
         double V;
@@ -61,7 +83,11 @@ namespace scurvy {
         }
 
         problem_t as_dfp() const {
-            return { V, D, A, J, -L, -v0, -vf }; // A and D swapped too
+            return { V, D, A, J, -L, -v0, -vf };
+        }
+
+        problem_t as_inverse() const {
+            return { V, A, D, J, -L, -vf, -v0 };
         }
 
         problem_t regularized() const {
@@ -114,6 +140,10 @@ namespace scurvy {
 
     struct periods_t {
         double T1, T2, T3, T4, T5, T6, T7;
+
+        bool validate() const {
+            return T1 > 0-impl::ABSTOL && T2 > 0-impl::ABSTOL && T3 > 0-impl::ABSTOL && T4 > 0-impl::ABSTOL && T5 > 0-impl::ABSTOL && T6 > 0-impl::ABSTOL && T7 > 0-impl::ABSTOL;
+        }
 
         double time() const {
             return T1 + T2 + T3 + T4 + T5 + T6 + T7;
@@ -284,25 +314,30 @@ namespace scurvy::impl {
 
         auto dist = 0.5*(prob.v0 + vp)*x + 0.5*(vp + prob.vf)*x_bar + vp*x_hat;
 
-        if(DEBUG) {
-            std::fprintf(stderr, "    x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
-            std::fprintf(stderr, "    vp: %g\n", vp);
-            std::fprintf(stderr, "    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
-        }
+        log("\n");
+        log("    x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
+        log("    v0: %g\n", prob.v0);
+        log("    vp: %g\n", vp);
+        log("    vf: %g\n", prob.vf);
+        log("    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
 
         if(!is_close(dist, L, RELTOL_DIST, ABSTOL_DIST)) {
+            log("    bad: distance\n");
             return std::nullopt;
         }
 
         if(x < 0 || x_hat < 0 || x_bar < 0) {
+            log("    bad: negative time\n");
             return std::nullopt;
         }
 
         if(vp > V && L >= 0 || -vp > V && L < 0) {
+            log("    bad: vp > V\n");
             return std::nullopt;
         }
 
         if(vp < 0 && L >= 0 || -vp < 0 && L < 0) {
+            log("    bad: negative velocity\n");
             return std::nullopt;
         }
 
@@ -311,20 +346,30 @@ namespace scurvy::impl {
         auto periods = calc_periods(x, x_hat, x_bar, a, d, J);
 
         if(periods.T1 * J > (A * (1+RELTOL)) || periods.T5 * J > (D * (1+RELTOL))) {
+            log("    bad: over acc\n");
             return std::nullopt;
         }
 
+        if(!periods.validate()) {
+            log("    bad: negative time period\n");
+        }
+
         if(cv && periods.T4 < -ABSTOL || !cv && !near_zero(periods.T4)) {
+            log("    bad: T4 mismatch: %g\n", periods.T4);
             return std::nullopt;
         }
 
         if(ca && periods.T2 < -ABSTOL || !ca && !near_zero(periods.T2)) {
+            log("    bad: T2 mismatch: %g\n", periods.T2);
             return std::nullopt;
         }
 
         if(cd && periods.T6 < -ABSTOL || !cd && !near_zero(periods.T6)) {
+            log("    bad: T6 mismatch: %g\n", periods.T6);
             return std::nullopt;
         }
+
+        log("    success\n");
 
         return periods;
     }

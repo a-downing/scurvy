@@ -104,8 +104,8 @@ int main() {
                 fail(sol->prob, "%s: wrong final velocity: %g vs %g, err: %g\n", sol->type_name(), sol->vf(), prob.vf, sol->vf() - prob.vf);
             }
         } else {
-            if(!scurvy::impl::is_close(sol->vf(), prob.vf)) {
-                fail(sol->prob, "%s: wrong final velocity: %g vs %g, err: %g\n", sol->type_name(), sol->vf(), prob.vf, sol->vf() - prob.vf);
+            if(!scurvy::impl::is_close(sol->vf(), sol->prob.vf)) {
+                fail(sol->prob, "%s: wrong final velocity: %g vs %g, err: %g\n", sol->type_name(), sol->vf(), sol->prob.vf, sol->vf() - sol->prob.vf);
             }
         }
 
