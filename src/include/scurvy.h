@@ -83,7 +83,7 @@ namespace scurvy
 
     inline std::optional<solution_t> solve(const problem_t &prob) {
         if(impl::is_close(prob.v0, prob.V) && impl::is_close(prob.vf, prob.V)) {
-            return solution_t::cv_solution(prob);
+            return std::make_optional(solution_t { prob, { 0, 0, 0, std::abs(prob.L) / prob.V, 0, 0, 0 }, solution_type_t::CV });
         }
 
         const auto _prob = prob.regularized();

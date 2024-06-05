@@ -257,10 +257,6 @@ namespace scurvy {
         periods_t periods;
         solution_type_t type;
 
-        static solution_t cv_solution(const problem_t &prob) {
-            return { prob, { 0, 0, 0, std::abs(prob.L) / prob.V, 0, 0, 0 }, solution_type_t::CV };
-        }
-
         double vf() const {
             return periods.vf(prob);
         }

@@ -117,7 +117,8 @@ namespace scurvy::impl {
             }
 
             auto v_p = v0 + 0.25*J*(x*x);
-            auto x_bar = (2 * std::sqrt(v_p - vf)) / std::sqrt(J);
+            // use complex sqrt or just clamp input
+            auto x_bar = (2 * std::sqrt(std::max(0.0, v_p - vf))) / std::sqrt(J);
             auto periods = get_periods(prob, x, 0, x_bar, v_p, false, false, false);
             maybe_update_best(prob, periods, solution_type_t::NCV_NCA_NCD, best_sol, best_time);
         }

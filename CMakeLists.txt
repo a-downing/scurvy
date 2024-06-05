@@ -37,3 +37,17 @@ add_executable(path_stress_test
         src/include/solve.h
 )
 target_include_directories(path_stress_test PUBLIC src/include "${EIGEN3_INCLUDE_DIRS}")
+
+add_executable(test
+        src/test.cpp
+        src/solve.cpp
+        src/include/basics.h
+        src/include/cv.h
+        src/include/maths.h
+        src/include/ncv.h
+        src/include/ncv_ca.h
+        src/include/ncv_nca.h
+        src/include/scurvy.h
+        src/include/solve.h
+)
+target_include_directories(test PUBLIC src/include "${EIGEN3_INCLUDE_DIRS}")
