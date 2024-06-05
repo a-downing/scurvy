@@ -10,7 +10,7 @@
 
 #include <scurvy.h>
 
-void fail(const scurvy::problem_t &prob, const char *format, ...) {
+void fail([[maybe_unused]] const scurvy::problem_t &prob, const char *format, ...) {
     prob.print();
     std::va_list args;
     va_start (args, format);
@@ -19,10 +19,10 @@ void fail(const scurvy::problem_t &prob, const char *format, ...) {
     std::exit(1);
 }
 
-void simulate(const scurvy::solution_t &sol) {
+int simulate(const scurvy::solution_t &sol) {
     char str[1024];
     std::snprintf(str, sizeof(str), "python ../simulate.py %g %g %g %g %g %g %g %g %g", sol.periods.T1, sol.periods.T2, sol.periods.T3, sol.periods.T4, sol.periods.T5, sol.periods.T6, sol.periods.T7, sol.prob.J, sol.prob.v0);
-    system(str);
+    return system(str);
 }
 
 void print_scurve(const scurvy::solution_t &sol, int res = 1000) {
@@ -138,8 +138,5 @@ int main() {
         }
 
         stats[sol->type] += 1;
-        //display(*sol);
     }
-
-    return 0;
 }

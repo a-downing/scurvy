@@ -7,28 +7,27 @@
 #include <basics.h>
 
 namespace scurvy::impl {
-    inline std::array<std::complex<double>, 2> ncv_ca_x_roots(const scurvy::problem_t &prob) {
+    inline std::array<double, 2> ncv_ca_x_roots(const scurvy::problem_t &prob) {
         auto [V, A, D, J, L, v0, vf] = prob;
         auto a = 1.0;
         auto b = -A/J + 2*v0/A;
         auto c = -2*L/A;
-        return solve_quadratic(a+0i, b+0i, c+0i);
+        return solve_quadratic(a, b, c);
     }
 
-    inline std::array<std::optional<solution_t>, 2> ncv_ca(const scurvy::problem_t &_prob) {
+    inline std::array<std::optional<solution_t>, 2> ncv_ca(const scurvy::problem_t &prob) {
         auto result = std::array<std::optional<solution_t>, 2>();
         log(solution_type_t::NCV_CA, "%s\n", __func__);
 
-        // hack, there are precision issues when this case slightly overshoots v_f and the other solutions are left with only a tiny time for the deceleration phase
-        auto prob = _prob;
-        prob.J *= 1.0 - 1e-2;
+        // hack, there are precision issues when this case slightly overshoots vf and the other solutions are left with only a tiny time for the deceleration phase
+        //auto prob = _prob;
+        //prob.J *= 1.0 - 1e-2;
 
         const auto [V, A, D, J, L, v0, vf] = prob;
         auto x_roots = ncv_ca_x_roots(prob);
 
         for(size_t i = 0; i < x_roots.size(); i++) {
-            auto xc = x_roots[i];
-            auto x = xc.real();
+            auto x = x_roots[i];
             auto vp = v0 - A*A/J + A*x;
             auto dist = (prob.v0 + vp)/2 * x;
 
@@ -36,7 +35,7 @@ namespace scurvy::impl {
                 log(solution_type_t::NCV_CA, "\n");
             }
 
-            log(solution_type_t::NCV_CA, "    x: %g + %gi\n", xc.real(), xc.imag());
+            log(solution_type_t::NCV_CA, "    x: %g\n", x, x);
             log(solution_type_t::NCV_CA, "    v0: %g\n", v0);
             log(solution_type_t::NCV_CA, "    vp: %g\n", vp);
             log(solution_type_t::NCV_CA, "    vf: %g\n", vf);
@@ -83,7 +82,7 @@ namespace scurvy::impl {
                 continue;
             }
 
-            result[i] = { prob, { T1, T2, T3, 0, 0, 0, 0 }, solution_type_t::NCV_CA };
+            result[i].emplace(solution_t { prob, { T1, T2, T3, 0, 0, 0, 0 }, solution_type_t::NCV_CA });
             log(solution_type_t::NCV_NCA, "    success\n");
         }
 

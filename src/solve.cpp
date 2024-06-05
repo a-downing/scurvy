@@ -62,10 +62,10 @@ namespace scurvy::impl {
         return { NAN_CD, NAN_CD, NAN_CD };
     }
 
-    std::array<std::complex<double>, 3> solve_cubic(double a, double b, double c, double d) {
+    std::array<double, 3> solve_cubic(double a, double b, double c, double d) {
         if(a == 0.0) {
             auto rs = solve_quadratic(b, c, d);
-            return { NAN_CD, rs[0]+0i, rs[1]+0i };
+            return { NAN_D, rs[0], rs[1] };
         }
 
         auto cs = Eigen::VectorXd(4);
@@ -82,11 +82,11 @@ namespace scurvy::impl {
         
         if (solver.info() == Eigen::Success) {
             auto values = solver.eigenvalues();
-            return { values[0], values[1], values[2] };
+            return { values[0].real(), values[1].real(), values[2].real() };
         }
         
         //assert("Eigenvalue computation did not succeed." == nullptr);
-        return { NAN_CD, NAN_CD, NAN_CD };
+        return { NAN_D, NAN_D, NAN_D };
     }
 
     std::array<double, 4> solve_quartic(double a, double b, double c, double d, double e) {
@@ -118,7 +118,7 @@ namespace scurvy::impl {
             return { NAN_D, NAN_D, rs[0], rs[1] };
         } if(a == 0) {
             auto rs = solve_cubic(b, c, d, e);
-            return { NAN_D, rs[0].real(), rs[1].real(), rs[2].real() };
+            return { NAN_D, rs[0], rs[1], rs[2] };
         }
 
         return solve_quartic(a, b, c, d, e);

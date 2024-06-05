@@ -2,10 +2,6 @@
 
 #include <cstdio>
 #include <complex>
-#include <utility>
-
-#include <Eigen/Eigen>
-#include <Eigen/Dense>
 
 #include <maths.h>
 
@@ -13,6 +9,7 @@ namespace scurvy {
     constexpr bool DEBUG = false;
 
     enum class solution_type_t {
+        CV,
         NCV_CA,
         NCV_NCA_CD,
         NCV_NCA_NCD,
@@ -27,6 +24,7 @@ namespace scurvy {
 
     inline const char* solution_type_to_string(const solution_type_t type) {
         switch (type) {
+            case solution_type_t::CV: return "CV";
             case solution_type_t::NCV_CA: return "NCV_CA";
             case solution_type_t::NCV_NCA_CD: return "NCV_NCA_CD";
             case solution_type_t::NCV_NCA_NCD: return "NCV_NCA_NCD";
@@ -41,7 +39,7 @@ namespace scurvy {
         }
     }
 
-    inline void log(solution_type_t type, const char *format, ...) {
+    inline void log([[maybe_unused]] solution_type_t type, const char *format, ...) {
         if(!DEBUG) {
             return;
         }
@@ -72,7 +70,7 @@ namespace scurvy {
         double v0;
         double vf;
 
-        problem_t(double V, double A, double D, double J, double L, double v_0, double v_f): V(V), A(A), D(D), J(J), L(L), v0(v_0), vf(v_f) {
+        problem_t(double V, double A, double D, double J, double L, double v0, double vf): V(V), A(A), D(D), J(J), L(L), v0(v0), vf(vf) {
 
         }
 
@@ -109,16 +107,16 @@ namespace scurvy {
             if(v0 <= vf) {
                 if (vf - v0 <= A*A / J) {
                     return 2 * sqrt((vf - v0) / J);
-                } else {
-                    return (vf - v0)/A + A/J;
                 }
-            } else {
-                if (v0 - vf <= D*D / J) {
-                    return 2 * sqrt((v0 - vf) / J);
-                } else {
-                    return (v0 - vf)/D + D/J;
-                }
+
+                return (vf - v0)/A + A/J;
             }
+
+            if (v0 - vf <= D*D / J) {
+                return 2 * sqrt((v0 - vf) / J);
+            }
+
+            return (v0 - vf)/D + D/J;
         }
 
         bool dfp_optimal() const {
@@ -259,6 +257,10 @@ namespace scurvy {
         periods_t periods;
         solution_type_t type;
 
+        static solution_t cv_solution(const problem_t &prob) {
+            return { prob, { 0, 0, 0, std::abs(prob.L) / prob.V, 0, 0, 0 }, solution_type_t::CV };
+        }
+
         double vf() const {
             return periods.vf(prob);
         }
@@ -290,9 +292,8 @@ namespace scurvy {
 }
 
 namespace scurvy::impl {
-
-    inline double calc_x_hat(const double V, const double L, const double v_0, const double v_f, const double x, const double x_bar) {
-        return (2*L - (v_0 + V)*x - (V + v_f)*x_bar) / (2*V);
+    inline double calc_x_hat(const double V, const double L, const double v0, const double vf, const double x, const double x_bar) {
+        return (2*L - (v0 + V)*x - (V + vf)*x_bar) / (2*V);
     }
 
     inline periods_t calc_periods(const double x, const double x_hat, const double x_bar, const double A, const double D, const double J) {
@@ -309,8 +310,8 @@ namespace scurvy::impl {
         };
     }
 
-    inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const bool cv, const bool ca, const bool cd, const double vp) {
-        auto [V, A, D, J, L, v_0, v_f] = prob;
+    inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const double vp, const bool cv, const bool ca, const bool cd) {
+        auto [V, A, D, J, L, v0, vf] = prob;
 
         auto dist = 0.5*(prob.v0 + vp)*x + 0.5*(vp + prob.vf)*x_bar + vp*x_hat;
 
@@ -331,12 +332,12 @@ namespace scurvy::impl {
             return std::nullopt;
         }
 
-        if(vp > V && L >= 0 || -vp > V && L < 0) {
+        if(vp > V && prob.afp() || -vp > V && !prob.afp()) {
             log("    bad: vp > V\n");
             return std::nullopt;
         }
 
-        if(vp < 0 && L >= 0 || -vp < 0 && L < 0) {
+        if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
             log("    bad: negative velocity\n");
             return std::nullopt;
         }
@@ -345,8 +346,13 @@ namespace scurvy::impl {
         auto d = cd ? D : 0.5*J*x_bar;
         auto periods = calc_periods(x, x_hat, x_bar, a, d, J);
 
-        if(periods.T1 * J > (A * (1+RELTOL)) || periods.T5 * J > (D * (1+RELTOL))) {
+        if(periods.T1 * J > A && !is_close(periods.T1 * J, A)) {
             log("    bad: over acc\n");
+            return std::nullopt;
+        }
+
+        if(periods.T5 * J > D && !is_close(periods.T5 * J, D)) {
+            log("    bad: over dec\n");
             return std::nullopt;
         }
 

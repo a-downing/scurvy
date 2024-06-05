@@ -3,7 +3,6 @@
 #include <cmath>
 #include <cstdarg>
 #include <random>
-#include <string>
 #include <chrono>
 
 #include <scurvy.h>
@@ -17,7 +16,7 @@ void fail(const char *format, ...) {
 }
 
 int main() {
-    constexpr int SEGS = 1000;
+    constexpr int SEGS = 100;
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
@@ -77,6 +76,4 @@ int main() {
 
         //return 0;
     }
-
-    return 0;
 }

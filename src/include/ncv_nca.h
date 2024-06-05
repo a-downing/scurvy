@@ -9,7 +9,7 @@
 #include <solve.h>
 
 namespace scurvy::impl {
-    inline std::array<std::complex<double>, 3> ncv_nca_x_roots(const scurvy::problem_t &prob) {
+    inline std::array<double, 3> ncv_nca_x_roots(const scurvy::problem_t &prob) {
         auto [V, A, D, J, L, v0, vf] = prob;
         auto a = 1.0;
         auto b = 0.0;
@@ -19,20 +19,19 @@ namespace scurvy::impl {
         return solve_cubic(a, b, c, d);
     }
 
-    inline std::array<std::optional<solution_t>, 3> ncv_nca(const scurvy::problem_t &_prob) {
+    inline std::array<std::optional<solution_t>, 3> ncv_nca(const scurvy::problem_t &prob) {
         auto result = std::array<std::optional<solution_t>, 3>();
         log(solution_type_t::NCV_NCA, "%s\n", __func__);
 
-        // hack, there are precision issues when this case slightly overshoots v_f and the other solutions are left with only a tiny time for the deceleration phase
-        auto prob = _prob;
-        prob.J *= 1.0 - 1e-2;
+        // hack, there are precision issues when this case slightly overshoots vf and the other solutions are left with only a tiny time for the deceleration phase
+        //auto prob = _prob;
+        //prob.J *= 1.0 - 1e-2;
 
         const auto [V, A, D, J, L, v0, vf] = prob;
         auto x_roots = ncv_nca_x_roots(prob);
 
         for(size_t i = 0; i < x_roots.size(); i++) {
-            auto xc = x_roots[i];
-            auto x = xc.real();
+            auto x = x_roots[i];
             auto vp = v0 + 0.25*J*(x*x);
             auto dist = (v0 + vp)/2 * x;
 
@@ -40,7 +39,7 @@ namespace scurvy::impl {
                 log(solution_type_t::NCV_NCA, "\n");
             }
 
-            log(solution_type_t::NCV_NCA, "    x: %g + %gi\n", xc.real(), xc.imag());
+            log(solution_type_t::NCV_NCA, "    x: %g\n", x);
             log(solution_type_t::NCV_NCA, "    v0: %g\n", v0);
             log(solution_type_t::NCV_NCA, "    vp: %g\n", vp);
             log(solution_type_t::NCV_NCA, "    vf: %g\n", vf);
@@ -90,7 +89,7 @@ namespace scurvy::impl {
 
             log(solution_type_t::NCV_NCA, "    T1: %g, T2: %g, T3: %g\n", T1, T2, T3);
 
-            result[i] = { prob, { T1, T2, T3, 0, 0, 0, 0 }, solution_type_t::NCV_NCA };
+            result[i].emplace(solution_t { prob, { T1, T2, T3, 0, 0, 0, 0 }, solution_type_t::NCV_NCA });
             log(solution_type_t::NCV_NCA, "    success\n");
         }
 

@@ -11,13 +11,13 @@
 
 namespace scurvy
 {
-    inline std::optional<solution_t> solve_half(const problem_t &_prob)
+    inline std::optional<solution_t> solve_half(const problem_t &prob)
     {
-        auto p = _prob.regularized();
+        const auto _prob = !prob.is_acc() && prob.afp() ? prob.as_dfp() : prob;
         auto best_time = 0.0;
         std::optional<solution_t> best_sol = std::nullopt;
 
-        auto sols_nca = impl::ncv_nca(p.is_acc() ? p : p.as_dfp());
+        auto sols_nca = impl::ncv_nca(_prob);
 
         for(auto sol : sols_nca) {
             if(sol) {
@@ -28,7 +28,7 @@ namespace scurvy
             }
         }
 
-        auto sols_ca = impl::ncv_ca(p.is_acc() ? p : p.as_dfp());
+        auto sols_ca = impl::ncv_ca(_prob);
 
         for(auto sol : sols_ca) {
             if(sol) {
@@ -46,22 +46,18 @@ namespace scurvy
         return best_sol;
     }
 
-    inline std::optional<solution_t> solve_full(const problem_t &_prob) {
-        auto p = _prob.regularized();
+    inline std::optional<solution_t> solve_full(const problem_t &prob) {
+        const auto _prob = prob.dfp_optimal() && prob.afp() ? prob.as_dfp() : prob;
 
-        if(p.dfp_optimal() && p.afp()) {
-            p = p.as_dfp();
-        }
-
-        std::array sols = {
-            impl::ncv_ca_cd(p),
-            impl::ncv_nca_ncd(p),
-            impl::ncv_nca_cd(p),
-            impl::ncv_ca_ncd(p),
-            impl::cv_ca_cd(p),
-            impl::cv_ca_ncd(p),
-            impl::cv_nca_cd(p),
-            impl::cv_nca_ncd(p),
+        const std::array sols = {
+            impl::ncv_ca_cd(_prob),
+            impl::ncv_nca_ncd(_prob),
+            impl::ncv_nca_cd(_prob),
+            impl::ncv_ca_ncd(_prob),
+            impl::cv_ca_cd(_prob),
+            impl::cv_ca_ncd(_prob),
+            impl::cv_nca_cd(_prob),
+            impl::cv_nca_ncd(_prob),
         };
 
         auto best_time = std::numeric_limits<double>::max();
@@ -86,13 +82,19 @@ namespace scurvy
     }
 
     inline std::optional<solution_t> solve(const problem_t &prob) {
-        auto sol = solve_full(prob);
+        if(impl::is_close(prob.v0, prob.V) && impl::is_close(prob.vf, prob.V)) {
+            return solution_t::cv_solution(prob);
+        }
+
+        const auto _prob = prob.regularized();
+
+        auto sol = solve_full(_prob);
 
         if(sol) {
             return sol;
         }
 
-        return solve_half(prob);
+        return solve_half(_prob);
     }
 
     inline std::optional<std::vector<solution_t>> solve_path(std::vector<problem_t> &probs) {
@@ -109,21 +111,16 @@ namespace scurvy
             }
         }
 
-        int backtrack = 1;
         int iterations = 0;
-        bool backtracking = false;
 
-        for(int i = 0; i < probs.size(); i++) {
+        for(size_t i = 0; i < probs.size(); i++) {
             iterations++;
             auto &prob = probs[i];
             auto next = i < probs.size() - 1 ? &probs[i + 1] : nullptr;
 
-            log("solve_path: iteration: %d, backtracking: %d\n", i, backtracking);
-
-            prob = prob.regularized();
+            log("solve_path: iteration: %d\n", i);
 
             if(next) {
-                *next = next->regularized();
                 prob.vf = std::min(next->v0, prob.V);
             }
 
@@ -134,51 +131,35 @@ namespace scurvy
                 return std::nullopt;
             }
 
-            if(next) {
-                if(std::abs(sol->vf()) > next->v0 && !impl::is_close(std::abs(sol->vf()), next->v0)) {
-                    backtracking = true;
-                    log("solve_path: overshoot: i: %d, %s: sol->prob.v0: %g, sol->vf(): %.17g(%.17g) -> next->v0: %.17g\n", i, sol->type_name(), sol->prob.v0, sol->vf(), sol->prob.vf, next->v0);
-
-                    auto inv = solve(prob.as_dfp().as_inverse());
-
-                    if(inv) {
-                        log("USING: %s: inv->vf(): %g\n", inv->type_name(), inv->vf());
-                        prob.v0 = inv->vf();
-                        i = i - backtrack - 1;
-                        continue;
-                    }
-
-                    log("solve_path: failed to resolve overshoot\n");
-                    return std::nullopt;
-                }
-
-                if(std::abs(sol->vf()) < next->v0 && !impl::is_close(std::abs(sol->vf()), next->v0)) {
-                    next->v0 = std::abs(sol->vf());
-                }
-            } else {
-                if(std::abs(sol->vf()) > prob.vf && !impl::is_close(std::abs(sol->vf()), prob.vf)) {
-                    backtracking = true;
-                    log("solve_path: end overshoot: i: %d, %s: sol->prob.v0: %g, sol->vf(): %.17g(%.17g) -> prob.vf: %.17g\n", i, sol->type_name(), sol->prob.v0, sol->vf(), sol->prob.vf, prob.vf);
-
-                    auto inv = solve_half(prob.as_dfp().as_inverse());
-
-                    if(inv) {
-                        log("USING: %s: inv->vf(): %g\n", inv->type_name(), inv->vf());
-                        prob.v0 = inv->vf();
-                        i = i - backtrack - 1;
-                        continue;
-                    }
-
-                    log("solve_path: failed to resolve end overshoot\n");
-                    return std::nullopt;
-                }
+            if(next && std::abs(sol->vf()) < next->v0 && !impl::is_close(std::abs(sol->vf()), next->v0)) {
+                next->v0 = std::abs(sol->vf());
             }
 
-            backtracking = false;
+            if(std::abs(sol->vf()) > prob.vf && !impl::is_close(std::abs(sol->vf()), prob.vf)) {
+                log("solve_path: overshoot: i: %d, %s: sol->prob.v0: %g, sol->vf(): %g -> prob.vf: %g\n", i, sol->type_name(), sol->prob.v0, sol->vf(), sol->prob.vf, prob.vf);
+
+                if(i == 0) {
+                    log("first segment unsolvable and nowhere to backtrack\n");
+                    return std::nullopt;
+                }
+
+                auto inv = solve(prob.as_dfp().as_inverse());
+
+                if(inv) {
+                    log("USING: %s: inv->vf(): %g\n", inv->type_name(), inv->vf());
+                    prob.v0 = inv->vf();
+                    i -= 2;
+                    continue;
+                }
+
+                log("solve_path: failed to resolve end overshoot\n");
+                return std::nullopt;
+            }
+
             solutions[i] = *sol;
         }
 
-        //log("solved %d segments in %d iterations\n", probs.size(), iterations);
+        log("solved %zu segments in %d iterations\n", probs.size(), iterations);
 
         return solutions;
     }
