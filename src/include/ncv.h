@@ -29,9 +29,9 @@ namespace scurvy::impl {
         std::optional<solution_t> best_sol = std::nullopt;
 
         for(auto x : roots) {
-            auto v_p = v0 - (A*A)/J + A*x;
-            auto x_bar = ((D*D) - vf*J + J*v_p) / (D*J);
-            auto periods = get_periods(prob, x, 0, x_bar, v_p, false, true, true);
+            auto vp = v0 - (A*A)/J + A*x;
+            auto x_bar = ((D*D) - vf*J + J*vp) / (D*J);
+            auto periods = get_periods(prob, x, 0, x_bar, vp, false, true, true);
             maybe_update_best(prob, periods, solution_type_t::NCV_CA_CD, best_sol, best_time);
         }
 
@@ -58,9 +58,9 @@ namespace scurvy::impl {
                 continue;
             }
 
-            auto v_p = v0 + 0.25*J*x*x;
-            auto x_bar = (D*D - vf*J + J*v_p) / (D*J);
-            auto periods = get_periods(prob, x, 0, x_bar, v_p, false, false, true);
+            auto vp = v0 + 0.25*J*x*x;
+            auto x_bar = (D*D - vf*J + J*vp) / (D*J);
+            auto periods = get_periods(prob, x, 0, x_bar, vp, false, false, true);
             maybe_update_best(prob, periods, solution_type_t::NCV_NCA_CD, best_sol, best_time);
         }
 
@@ -87,9 +87,9 @@ namespace scurvy::impl {
                 continue;
             }
 
-            auto v_p = vf + 0.25*J*x_bar*x_bar;
-            auto x = (A*A + J*v_p - J*v0) / (A*J);
-            auto periods = get_periods(prob, x, 0, x_bar, v_p, false, true, false);
+            auto vp = vf + 0.25*J*x_bar*x_bar;
+            auto x = (A*A + J*vp - J*v0) / (A*J);
+            auto periods = get_periods(prob, x, 0, x_bar, vp, false, true, false);
             maybe_update_best(prob, periods, solution_type_t::NCV_CA_NCD, best_sol, best_time);
         }
 
@@ -116,10 +116,10 @@ namespace scurvy::impl {
                 continue;
             }
 
-            auto v_p = v0 + 0.25*J*(x*x);
+            auto vp = v0 + 0.25*J*(x*x);
             // use complex sqrt or just clamp input
-            auto x_bar = (2 * std::sqrt(std::max(0.0, v_p - vf))) / std::sqrt(J);
-            auto periods = get_periods(prob, x, 0, x_bar, v_p, false, false, false);
+            auto x_bar = (2 * std::sqrt(std::max(0.0, vp - vf))) / std::sqrt(J);
+            auto periods = get_periods(prob, x, 0, x_bar, vp, false, false, false);
             maybe_update_best(prob, periods, solution_type_t::NCV_NCA_NCD, best_sol, best_time);
         }
 

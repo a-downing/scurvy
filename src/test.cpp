@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <cmath>
@@ -40,6 +41,9 @@ int main() {
     std::uniform_real_distribution<> dis1(0.01, 100.0/60);
     std::uniform_real_distribution<> dis2(0.001, 10.0);
 
+    uint64_t num_problems = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+
     for(;;) {
         auto V = dis1(gen);
         auto A = dis1(gen);
@@ -54,5 +58,16 @@ int main() {
         }
 
         auto prob = scurvy::problem_t(V, A, D, J, L, v0, vf);
+        num_problems++;
+
+        auto sol_nvc_nca = scurvy::impl::ncv_nca(prob);
+        auto sol_nvc_ca = scurvy::impl::ncv_ca(prob);
+
+        if(num_problems % 1000000 == 0) {
+            auto now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> duration = now - start;
+            auto per = duration.count() / num_problems / 1e-9;
+            std::printf("solved %lu random problems (%.1f ns/problem)\n", num_problems, per);
+        }
     }
 }

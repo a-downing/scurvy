@@ -10,8 +10,8 @@ namespace scurvy::impl {
 
     constexpr double RELTOL = 1e-9;
     constexpr double ABSTOL = 1e-9;
-    constexpr double RELTOL_DIST = 1e-6;
-    constexpr double ABSTOL_DIST = 1e-6;
+    constexpr double RELTOL_DIST = 1e-7;
+    constexpr double ABSTOL_DIST = 1e-7;
 
     constexpr auto NAN_D = std::numeric_limits<double>::quiet_NaN();
     constexpr auto NAN_CD = std::numeric_limits<std::complex<double>>::quiet_NaN();
@@ -28,6 +28,22 @@ namespace scurvy::impl {
 
     inline bool near_zero(double x) {
         return is_close(x, 0);
+    }
+
+    inline bool approx_lt(double a, double b) {
+        return a < b && !is_close(a, b);
+    }
+
+    inline bool approx_lte(double a, double b) {
+        return a <= b || is_close(a, b);
+    }
+
+    inline bool approx_gt(double a, double b) {
+        return a > b && !is_close(a, b);
+    }
+
+    inline bool approx_gte(double a, double b) {
+        return a >= b || is_close(a, b);
     }
 
     template<typename T>

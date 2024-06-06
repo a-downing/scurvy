@@ -6,17 +6,17 @@
 #include <maths.h>
 
 namespace scurvy {
-    constexpr bool DEBUG = false;
+    constexpr bool DEBUG = true;
 
     enum class solution_type_t {
         CV,
         NCV_CA,
+        NCV_NCA,
         NCV_NCA_CD,
         NCV_NCA_NCD,
-        CV_CA_CD,
         NCV_CA_NCD,
         NCV_CA_CD,
-        NCV_NCA,
+        CV_CA_CD,
         CV_CA_NCD,
         CV_NCA_CD,
         CV_NCA_NCD
@@ -26,12 +26,12 @@ namespace scurvy {
         switch (type) {
             case solution_type_t::CV: return "CV";
             case solution_type_t::NCV_CA: return "NCV_CA";
+            case solution_type_t::NCV_NCA: return "NCV_NCA";
             case solution_type_t::NCV_NCA_CD: return "NCV_NCA_CD";
             case solution_type_t::NCV_NCA_NCD: return "NCV_NCA_NCD";
-            case solution_type_t::CV_CA_CD: return "CV_CA_CD";
             case solution_type_t::NCV_CA_NCD: return "NCV_CA_NCD";
             case solution_type_t::NCV_CA_CD: return "NCV_CA_CD";
-            case solution_type_t::NCV_NCA: return "NCV_NCA";
+            case solution_type_t::CV_CA_CD: return "CV_CA_CD";
             case solution_type_t::CV_CA_NCD: return "CV_CA_NCD";
             case solution_type_t::CV_NCA_CD: return "CV_NCA_CD";
             case solution_type_t::CV_NCA_NCD: return "CV_NCA_NCD";
@@ -121,6 +121,7 @@ namespace scurvy {
 
         bool dfp_optimal() const {
             auto Lm = (v0 + vf)/2 * min_dv_time();
+            log("dfp_optimal: %d, Lm: %g, L: %g, diff: %g\n", Lm > L, Lm, L, Lm - L);
             return Lm > L;
         }
 
@@ -257,20 +258,24 @@ namespace scurvy {
         periods_t periods;
         solution_type_t type;
 
-        double vf() const {
-            return periods.vf(prob);
+        double vf(bool actual = false) const {
+            return actual ? (prob.afp() ? periods.vf(prob) : -periods.vf(prob)) : periods.vf(prob);
         }
 
         double vt(double t) const {
             return periods.vt(prob, t);
         }
 
-        double vp() const {
+        double vp(bool actual = false) const {
+            double v;
+
             if(impl::near_zero(periods.T2)) {
-                return prob.v0 + 0.25 * prob.J * std::pow(periods.acc_time(), 2);
+                v = prob.v0 + 0.25 * prob.J * std::pow(periods.acc_time(), 2);
+            } else {
+                v = prob.v0 - std::pow(prob.A, 2)/prob.J + prob.A*periods.acc_time();
             }
 
-            return prob.v0 - std::pow(prob.A, 2)/prob.J + prob.A*periods.acc_time();
+            return actual ? (prob.afp() ? v : -v) : v;
         }
 
         double distance() const {
@@ -306,34 +311,34 @@ namespace scurvy::impl {
         };
     }
 
-    inline std::optional<periods_t> get_periods(const problem_t &prob, const double x, const double x_hat, const double x_bar, const double vp, const bool cv, const bool ca, const bool cd) {
+    inline std::optional<periods_t> get_periods(const problem_t &prob,  double x,  double x_hat,  double x_bar, double vp, const bool cv, const bool ca, const bool cd) {
         auto [V, A, D, J, L, v0, vf] = prob;
 
         auto dist = 0.5*(prob.v0 + vp)*x + 0.5*(vp + prob.vf)*x_bar + vp*x_hat;
 
         log("\n");
-        log("    x: %g, x_hat: %g, x_bar: %g\n", x, x_hat, x_bar);
-        log("    v0: %g\n", prob.v0);
-        log("    vp: %g\n", vp);
-        log("    vf: %g\n", prob.vf);
-        log("    dist: %g, L: %g, err: %g\n", dist, L, dist - L);
+        log("    x: %.17g, x_hat: %.17g, x_bar: %.17g\n", x, x_hat, x_bar);
+        log("    v0: %.17g\n", prob.v0);
+        log("    vp: %.17g\n", vp);
+        log("    vf: %.17g\n", prob.vf);
+        log("    dist: %.17g, L: %.17g, err: %.17g\n", dist, L, dist - L);
 
         if(!is_close(dist, L, RELTOL_DIST, ABSTOL_DIST)) {
             log("    bad: distance\n");
             return std::nullopt;
         }
 
-        if(x < 0 || x_hat < 0 || x_bar < 0) {
+        if(approx_lt(x, 0.0) || approx_lt(x_hat, 0.0) || approx_lt(x_bar, 0.0)) {
             log("    bad: negative time\n");
             return std::nullopt;
         }
 
-        if(vp > V && prob.afp() || -vp > V && !prob.afp()) {
+        if(approx_gt(vp, V) && prob.afp() || approx_gt(-vp, V) && !prob.afp()) {
             log("    bad: vp > V\n");
             return std::nullopt;
         }
 
-        if(vp < 0 && prob.afp() || -vp < 0 && !prob.afp()) {
+        if(approx_lt(vp, 0.0) && prob.afp() || approx_lt(-vp, 0.0) && !prob.afp()) {
             log("    bad: negative velocity\n");
             return std::nullopt;
         }
@@ -342,12 +347,17 @@ namespace scurvy::impl {
         auto d = cd ? D : 0.5*J*x_bar;
         auto periods = calc_periods(x, x_hat, x_bar, a, d, J);
 
-        if(periods.T1 * J > A && !is_close(periods.T1 * J, A)) {
+        if(!is_close(periods.vf(prob), prob.vf)) {
+            log("    bad: vf(): %.17g, err: %g\n", periods.vf(prob), periods.vf(prob) - prob.vf);
+            return std::nullopt;
+        }
+
+        if(approx_gt(periods.T1 * J, A)) {
             log("    bad: over acc\n");
             return std::nullopt;
         }
 
-        if(periods.T5 * J > D && !is_close(periods.T5 * J, D)) {
+        if(approx_gt(periods.T5 * J, D)) {
             log("    bad: over dec\n");
             return std::nullopt;
         }
@@ -356,17 +366,17 @@ namespace scurvy::impl {
             log("    bad: negative time period\n");
         }
 
-        if(cv && periods.T4 < -ABSTOL || !cv && !near_zero(periods.T4)) {
+        if(cv && approx_lt(periods.T4, 0.0) || !cv && !near_zero(periods.T4)) {
             log("    bad: T4 mismatch: %g\n", periods.T4);
             return std::nullopt;
         }
 
-        if(ca && periods.T2 < -ABSTOL || !ca && !near_zero(periods.T2)) {
+        if(ca && approx_lt(periods.T2, 0.0) || !ca && !near_zero(periods.T2)) {
             log("    bad: T2 mismatch: %g\n", periods.T2);
             return std::nullopt;
         }
 
-        if(cd && periods.T6 < -ABSTOL || !cd && !near_zero(periods.T6)) {
+        if(cd && approx_lt(periods.T6, 0.0) || !cd && !near_zero(periods.T6)) {
             log("    bad: T6 mismatch: %g\n", periods.T6);
             return std::nullopt;
         }
