@@ -12,11 +12,10 @@
 
 namespace scurvy
 {
-    inline std::optional<solution_t> solve_half(const problem_t &prob, bool auto_transform_dfp = true)
-    {
+    inline std::optional<solution_t> solve_half(const problem_t &prob, bool auto_transform_dfp = true) {
         const auto _prob = !prob.is_acc() && prob.afp() && auto_transform_dfp ? prob.as_dfp() : prob;
 
-        auto best_dv = 0.0;
+        auto best_dv = -1.0;
         std::optional<solution_t> best_sol = std::nullopt;
 
         auto sols_nca = impl::ncv_nca(_prob);
@@ -31,7 +30,6 @@ namespace scurvy
 
         if(sols_ca && sols_ca->vp() - sols_ca->prob.v0 > best_dv) {
             assert(impl::is_close(sols_ca->vf(), sols_ca->vp()));
-            best_dv = sols_ca->vp() - sols_ca->prob.v0;
             best_sol = sols_ca;
         }
 
@@ -86,8 +84,9 @@ namespace scurvy
 
         auto sol_half = solve_half(_prob, auto_transform_dfp);
 
-        if(sol_half && impl::is_close(sol_half->vp(), sol_half->prob.vf)) {
-            log("solve: using sol_half, has exact solution\n");
+        if(sol_half && impl::is_close(sol_half->vf(), sol_half->prob.vf)) {
+            solve_full(_prob, auto_transform_dfp);
+            log("solve: using sol_half, has exact solution: err: %g\n", sol_half->vf() - sol_half->prob.vf);
             return sol_half;
         }
 
@@ -144,11 +143,20 @@ namespace scurvy
                 sol->prob.print();
             }
 
-            if(next && sol->vf(true) < next->v0 && !impl::is_close(sol->vf(true), next->v0)) {
-                next->v0 = std::abs(sol->vf());
+            if(next && impl::approx_lt(sol->vf(true), next->v0, 1e-8, 1e-8)) {
+                log("solve_path: undershoot: i: %d, %s: prob.vf: %.17g, next->v0: %.17g, sol->vf(true): %.17g, err: %g\n", i, sol->type_name(), prob.vf, next->v0, sol->vf(true), sol->vf(true) - next->v0);
+                next->v0 = sol->vf(true);
             }
 
-            if(sol->vf(true) > prob.vf && !impl::is_close(sol->vf(true), prob.vf)) {
+            log("sol->prob.v0: %.17g\n", sol->prob.v0);
+            log("sol->vf(): %.17g\n", sol->vf());
+            log("sol->vf(true): %.17g\n", sol->vf(true));
+            log("sol->vp(): %.17g\n", sol->vp());
+            log("sol->vp(true): %.17g\n", sol->vp(true));
+            log("sol->prob.vf: %.17g\n", sol->prob.vf);
+            log("prob.vf: %.17g\n", prob.vf);
+
+            if(impl::approx_gt(sol->vf(true), prob.vf, 1e-8, 1e-8)) {
                 if(i_backtrack_last == i) {
                     log("stuck in infinite loop backtracking\n");
                     return std::nullopt;
@@ -156,7 +164,7 @@ namespace scurvy
 
                 i_backtrack_last = i;
 
-                log("solve_path: overshoot: i: %d, %s: sol->prob.v0: %g, sol->vf(): %g -> sol->prob.vf: %g, err: %.17g\n", i, sol->type_name(), sol->prob.v0, sol->vf(), sol->prob.vf, sol->vf() - sol->prob.vf);
+                log("solve_path: overshoot: i: %d, %s: prob.v0: %.17g, prob.vf: %.17g, sol->vf(true): %.17g, err: %g\n", i, sol->type_name(), prob.v0, prob.vf, sol->vf(true), sol->vf(true) - prob.vf);
 
                 if(i == 0) {
                     log("first segment unsolvable and nowhere to backtrack\n");

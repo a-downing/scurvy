@@ -23,12 +23,12 @@ namespace scurvy::impl {
         log(solution_type_t::NCV_NCA, "%s\n", __func__);
 
         auto prob = _prob;
-        prob.J *= 0.99;
+        //prob.J *= 0.99;
 
         const auto [V, A, D, J, L, v0, vf] = prob;
         auto x_roots = ncv_nca_x_roots(prob);
 
-        auto best_dv = 0.0;
+        auto best_dv = -1.0;
         std::optional<solution_t> best_sol = std::nullopt;
 
         for(auto x : x_roots) {
@@ -48,7 +48,7 @@ namespace scurvy::impl {
                 continue;
             }
 
-            if(!is_close(dist, prob.L)) {
+            if(!is_close(dist, prob.L, RELTOL_DIST, ABSTOL_DIST)) {
                 log(solution_type_t::NCV_NCA, "    bad: distance\n");
                 continue;
             }

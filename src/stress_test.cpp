@@ -37,8 +37,8 @@ void print_scurve(const scurvy::solution_t &sol, int res = 1000) {
 int main() {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_real_distribution<> dis1(0.01, 100.0/60);
-    std::uniform_real_distribution<> dis2(0.001, 10.0);
+    std::uniform_real_distribution<> dis1(0.001, 100.0/60);
+    std::uniform_real_distribution<> dis2(0.000001, 10.0);
 
     uint64_t num_problems = 0;
     std::unordered_map<scurvy::solution_type_t, uint64_t> stats;
@@ -106,7 +106,7 @@ int main() {
         }
 
         if(sol->type == scurvy::solution_type_t::NCV_CA || sol->type == scurvy::solution_type_t::NCV_NCA) {
-            if(sol->vf() > sol->prob.vf && sol->prob.afp() || -sol->vf() < -sol->prob.vf && !sol->prob.afp()) {
+            if(scurvy::impl::approx_gt(sol->vf(), sol->prob.vf) && sol->prob.afp() || scurvy::impl::approx_lt(-sol->vf(), -sol->prob.vf) && !sol->prob.afp()) {
                 // not actually a failure, the solution is impossible
                 //fail(sol->prob, "%s: wrong final velocity: %g vs %g, err: %g\n", sol->type_name(), sol->vf(), prob.vf, sol->vf() - prob.vf);
             }
@@ -116,7 +116,7 @@ int main() {
             }
         }
 
-        if(sol->periods.T2 < -scurvy::impl::ABSTOL || sol->periods.T4 < -scurvy::impl::ABSTOL || sol->periods.T6 < -scurvy::impl::ABSTOL) {
+        if(scurvy::impl::approx_lt(sol->periods.T2, 0.0) || scurvy::impl::approx_lt(sol->periods.T4, 0.0) || scurvy::impl::approx_lt(sol->periods.T6, 0.0)) {
             sol->periods.print();
             fail(sol->prob, "%s: bad time period\n", sol->type_name());
         }
@@ -127,7 +127,7 @@ int main() {
                 fail(sol->prob, "%s: peak velocity for constant velocity case should be V: %g vs %g, err: %g\n", sol->type_name(), sol->vp(), sol->prob.V, err);
             }
         } else {
-            if(sol->vp() > sol->prob.V) {
+            if(scurvy::impl::approx_gt(sol->vp(), sol->prob.V)) {
                 auto err = sol->vp() - sol->prob.V;
                 fail(sol->prob, "%s: peak velocity over V: %g vs %g, err: %g\n", sol->type_name(), sol->vp(), sol->prob.V, err);
             }

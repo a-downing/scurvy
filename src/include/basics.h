@@ -6,7 +6,7 @@
 #include <maths.h>
 
 namespace scurvy {
-    constexpr bool DEBUG = true;
+    constexpr bool DEBUG = false;
 
     enum class solution_type_t {
         CV,
@@ -164,6 +164,14 @@ namespace scurvy {
             return 0.5*(prob.v0 + v_p)*acc_time() + 0.5*(v_p + prob.vf)*dec_time() + v_p*cv_time();
         }
 
+        double vp(const problem_t &prob) const {
+            if(impl::near_zero(T2)) {
+                return prob.v0 + 0.25 * prob.J * std::pow(acc_time(), 2);
+            }
+
+            return prob.v0 - std::pow(prob.A, 2)/prob.J + prob.A*acc_time();
+        }
+
         double vf(const problem_t &prob) const {
             auto a = !impl::near_zero(T2) ? prob.A : 0.5*prob.J*acc_time();
             auto d = !impl::near_zero(T6) ? prob.D : 0.5*prob.J*dec_time();
@@ -267,15 +275,7 @@ namespace scurvy {
         }
 
         double vp(bool actual = false) const {
-            double v;
-
-            if(impl::near_zero(periods.T2)) {
-                v = prob.v0 + 0.25 * prob.J * std::pow(periods.acc_time(), 2);
-            } else {
-                v = prob.v0 - std::pow(prob.A, 2)/prob.J + prob.A*periods.acc_time();
-            }
-
-            return actual ? (prob.afp() ? v : -v) : v;
+            return actual ? (prob.afp() ? periods.vp(prob) : -periods.vp(prob)) : periods.vp(prob);
         }
 
         double distance() const {
@@ -346,6 +346,16 @@ namespace scurvy::impl {
         auto a = ca ? A : 0.5*J*x;
         auto d = cd ? D : 0.5*J*x_bar;
         auto periods = calc_periods(x, x_hat, x_bar, a, d, J);
+
+        // if(approx_gt(periods.vp(prob), V) && prob.afp() || approx_gt(-periods.vp(prob), V) && !prob.afp()) {
+        //     log("    bad: vp > V\n");
+        //     return std::nullopt;
+        // }
+        //
+        // if(approx_lt(vp, 0.0) && prob.afp() || approx_lt(-vp, 0.0) && !prob.afp()) {
+        //     log("    bad: negative velocity\n");
+        //     return std::nullopt;
+        // }
 
         if(!is_close(periods.vf(prob), prob.vf)) {
             log("    bad: vf(): %.17g, err: %g\n", periods.vf(prob), periods.vf(prob) - prob.vf);

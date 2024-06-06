@@ -33,11 +33,11 @@ int main() {
     constexpr int SEGS = 100;
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_real_distribution<> dis1(0.01, 100.0/60);
-    std::uniform_real_distribution<> dis2(0.001, 0.2);
+    std::uniform_real_distribution<> dis1(0.001, 100.0/60);
+    std::uniform_real_distribution<> dis2(0.000001, 10.0);
     std::vector<scurvy::problem_t> path;
 
-    for(;;) {
+    for(size_t i = 0;; i++) {
         path.clear();
         
         for(int i = 0; i < SEGS; i++) {
@@ -69,7 +69,7 @@ int main() {
         auto sols = scurvy::solve_path(path);
         std::chrono::duration<double> duration = std::chrono::high_resolution_clock::now() - start;
 
-        std::fprintf(stderr, "solved %zu problems in %gs\n", path.size(), duration.count());
+        std::fprintf(stderr, "%zu: solved %zu problems in %gs\n", i, path.size(), duration.count());
 
         if(!sols) {
             fail(path_copy, "no solutions\n");

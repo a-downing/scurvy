@@ -12,6 +12,7 @@ namespace scurvy::impl {
         auto a = 1.0;
         auto b = -A/J + 2*v0/A;
         auto c = -2*L/A;
+
         return solve_quadratic(a, b, c);
     }
 
@@ -19,12 +20,12 @@ namespace scurvy::impl {
         log(solution_type_t::NCV_CA, "%s\n", __func__);
 
         auto prob = _prob;
-        prob.J *= 0.99;
+        //prob.J *= 0.99;
 
         const auto [V, A, D, J, L, v0, vf] = prob;
         auto x_roots = ncv_ca_x_roots(prob);
 
-        auto best_dv = 0.0;
+        auto best_dv = -1.0;
         std::optional<solution_t> best_sol = std::nullopt;
 
         for(auto x : x_roots) {
@@ -43,7 +44,7 @@ namespace scurvy::impl {
                 continue;
             }
 
-            if(!is_close(dist, prob.L)) {
+            if(!is_close(dist, prob.L, RELTOL_DIST, ABSTOL_DIST)) {
                 log(solution_type_t::NCV_CA, "    bad: distance\n");
                 continue;
             }
